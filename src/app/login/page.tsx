@@ -17,6 +17,7 @@ type FormData = z.infer<typeof schema>;
 export default function LoginPage() {
     const router = useRouter();
     const setAccessToken = useAuthStore((s) => s.setAccessToken);
+    const setUser = useAuthStore((s) => s.setUser);
 
     const {
         register,
@@ -31,8 +32,9 @@ export default function LoginPage() {
             const res = await api.post("/auth/login", data);
 
             setAccessToken(res.data.accessToken);
+            setUser(res.data.user);
 
-            router.push("/dashboard");
+            router.replace("/dashboard");
         } catch (error) {
             console.error(error);
             alert("Login failed");

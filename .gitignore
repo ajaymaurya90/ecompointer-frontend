@@ -65,3 +65,5 @@ next-env.d.ts
 # -------------------
 .vscode/
 .idea/
+*storybook.log
+storybook-static
