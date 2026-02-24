@@ -29,17 +29,17 @@ export default function ProtectedRoute({
         }
     }, [accessToken, user, isInitialized, allowedRoles, router]);
 
-    // ⏳ Wait until auth system finishes initializing
+    // Wait until auth system finishes initializing
     if (!isInitialized) {
         return <div className="p-6">Checking authentication...</div>;
     }
 
-    // 🔒 Not logged in
+    // Not logged in
     if (!accessToken || !user) {
         return null;
     }
 
-    // 🚫 Role restriction
+    // Role restriction
     if (allowedRoles && !allowedRoles.includes(user.role.toUpperCase() as "BRAND_OWNER" | "SHOP_OWNER" | "SUPER_ADMIN")) {
         return null;
     }

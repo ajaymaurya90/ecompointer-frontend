@@ -101,7 +101,7 @@ const Sidebar = () => {
                                 </Link>
 
                                 <Link
-                                    href="/dashboard/categories"
+                                    href="/dashboard/products/categories"
                                     className="flex items-center gap-2 px-3 py-2 rounded-md text-sm
                                                text-slate-300 hover:bg-white/5 hover:text-white transition"
                                 >
