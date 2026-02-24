@@ -1,63 +1,47 @@
-"use client";
-
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { api } from "@/lib/api";
-import { useAuthStore } from "@/store/authStore";
-import { useRouter } from "next/navigation";
-
-const schema = z.object({
-    email: z.string().email(),
-    password: z.string().min(6),
-});
-
-type FormData = z.infer<typeof schema>;
+import LoginForm from "@/components/Auth/LoginForm";
 
 export default function LoginPage() {
-    const router = useRouter();
-    const setAccessToken = useAuthStore((s) => s.setAccessToken);
-    const setUser = useAuthStore((s) => s.setUser);
-
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm<FormData>({
-        resolver: zodResolver(schema),
-    });
-
-    const onSubmit = async (data: FormData) => {
-        try {
-            const res = await api.post("/auth/login", data);
-
-            setAccessToken(res.data.accessToken);
-            setUser(res.data.user);
-
-            router.replace("/dashboard");
-        } catch (error) {
-            console.error(error);
-            alert("Login failed");
-        }
-    };
-
     return (
-        <div>
-            <h1>Login</h1>
+        <div className="min-h-screen flex bg-gray-100 dark:bg-zinc-950">
 
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <input placeholder="Email" {...register("email")} />
-                <p>{errors.email?.message}</p>
+            {/* Left Branding Panel */}
+            <div className="hidden lg:flex relative w-1/2 
+                bg-gradient-to-br 
+                from-slate-900 via-blue-950 to-slate-950 
+                text-white p-12 flex-col justify-between overflow-hidden">
 
-                <input
-                    type="password"
-                    placeholder="Password"
-                    {...register("password")}
-                />
-                <p>{errors.password?.message}</p>
+                {/* Ambient Blue Glow */}
+                <div className="absolute -top-32 -left-32 w-96 h-96 
+                    bg-blue-500/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 right-0 w-96 h-96 
+                    bg-indigo-500/10 rounded-full blur-3xl" />
 
-                <button type="submit">Login</button>
-            </form>
+                <div className="relative z-10">
+                    <h1 className="text-3xl font-semibold tracking-wide text-white/90">
+                        ECOMPOINTER
+                    </h1>
+
+                    <p className="mt-6 text-4xl font-semibold leading-tight">
+                        Multi-Brand Garment Management
+                    </p>
+
+                    <p className="mt-4 text-slate-300 max-w-md leading-relaxed">
+                        Built for scalable fashion businesses. Manage products,
+                        variants, inventory and retail operations from one
+                        centralized platform.
+                    </p>
+                </div>
+
+                <p className="relative z-10 text-sm text-slate-400">
+                    © {new Date().getFullYear()} ecompointer. All rights reserved.
+                </p>
+            </div>
+
+            {/* Right Login Section */}
+            <div className="flex w-full lg:w-1/2 items-center justify-center p-6">
+                <LoginForm />
+            </div>
+
         </div>
     );
 }

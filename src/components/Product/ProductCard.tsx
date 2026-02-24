@@ -1,29 +1,3 @@
-/*import React from "react";
-import { Product } from "@/types";
-
-type ProductCardProps = {
-    product: Product;
-};
-
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-    return (
-        <div className="border rounded p-4 shadow hover:shadow-lg transition">
-            {product.image && (
-                <img
-                    src={product.image}
-                    alt={product.name}
-                    className="mb-2 h-32 w-full object-cover rounded"
-                />
-            )}
-            <h2 className="font-bold text-lg">{product.name}</h2>
-            <p className="text-gray-600">${product.price}</p>
-        </div>
-    );
-};
-
-export default ProductCard;*/
-// src/components/Product/productCard.tsx
-
 import React from "react";
 import { Product } from "@/store/productStore";
 
@@ -32,16 +6,41 @@ interface Props {
 }
 
 export default function ProductCard({ product }: Props) {
+    // Get primary image or fallback
+    const primaryImage =
+        product.media?.find((m) => m.isPrimary)?.url ||
+        product.media?.[0]?.url ||
+        "https://via.placeholder.com/300";
+
+    // Get first variant price (if exists)
+    const displayPrice =
+        product.variants?.[0]?.retailGross ?? 0;
+
+    // Calculate total stock across variants
+    const totalStock =
+        product.variants?.reduce(
+            (sum, variant) => sum + (variant.stock ?? 0),
+            0
+        ) ?? 0;
+
     return (
-        <div className="border rounded-lg p-4 shadow-sm bg-white">
-            <h3 className="text-lg font-semibold">{product.name}</h3>
+        <div className="border rounded-lg p-4 shadow-sm bg-white hover:shadow-md transition">
+            <img
+                src={primaryImage}
+                alt={product.name}
+                className="h-40 w-full object-cover rounded mb-3"
+            />
+
+            <h3 className="text-lg font-semibold">
+                {product.name}
+            </h3>
 
             <p className="text-gray-600 mt-1">
-                ₹ {product.price}
+                ₹ {displayPrice.toLocaleString()}
             </p>
 
-            <p className="text-sm mt-2">
-                Stock: {product.stock}
+            <p className="text-sm mt-2 text-gray-500">
+                Total Stock: {totalStock}
             </p>
         </div>
     );

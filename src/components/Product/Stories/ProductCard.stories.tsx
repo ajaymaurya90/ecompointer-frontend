@@ -11,17 +11,40 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const mockProduct = {
+    id: "1",
+    name: "Premium Cotton Shirt",
+    productCode: "SHIRT-001",
+    description: "High quality cotton shirt",
+    media: [
+        {
+            id: "m1",
+            url: "https://via.placeholder.com/300",
+            isPrimary: true,
+        },
+    ],
+    variants: [
+        {
+            id: "v1",
+            retailGross: 1499,
+            stock: 25,
+            size: "L",
+            color: "White",
+        },
+    ],
+};
+
 export const Default: Story = {
     args: {
-        name: "T-Shirt",
-        price: 20,
-        image: "https://via.placeholder.com/150",
+        product: mockProduct,
     },
 };
 
 export const NoImage: Story = {
     args: {
-        name: "Jeans",
-        price: 45,
+        product: {
+            ...mockProduct,
+            media: [],
+        },
     },
 };

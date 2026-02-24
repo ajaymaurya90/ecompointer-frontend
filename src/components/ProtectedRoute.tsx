@@ -24,7 +24,7 @@ export default function ProtectedRoute({
             return;
         }
 
-        if (allowedRoles && !allowedRoles.includes(user.role)) {
+        if (allowedRoles && !allowedRoles.includes(user.role.toUpperCase() as "BRAND_OWNER" | "SHOP_OWNER" | "SUPER_ADMIN")) {
             router.replace("/unauthorized");
         }
     }, [accessToken, user, isInitialized, allowedRoles, router]);
@@ -40,7 +40,7 @@ export default function ProtectedRoute({
     }
 
     // 🚫 Role restriction
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (allowedRoles && !allowedRoles.includes(user.role.toUpperCase() as "BRAND_OWNER" | "SHOP_OWNER" | "SUPER_ADMIN")) {
         return null;
     }
 

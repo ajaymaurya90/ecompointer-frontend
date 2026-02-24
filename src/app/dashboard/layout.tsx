@@ -11,13 +11,22 @@ export default function DashboardLayout({
 }) {
     return (
         <ProtectedRoute allowedRoles={["BRAND_OWNER"]}>
-            <div className="flex h-screen bg-gray-100">
+            <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/40">
+
+                {/* Sidebar */}
                 <Sidebar />
 
+                {/* Main Section */}
                 <div className="flex-1 flex flex-col">
+
+                    {/* Top Navigation */}
                     <TopNav />
-                    <main className="flex-1 overflow-y-auto p-6">
-                        {children}
+
+                    {/* Page Content */}
+                    <main className="flex-1 overflow-y-auto p-6 md:p-8">
+                        <div className="max-w-7xl mx-auto">
+                            {children}
+                        </div>
                     </main>
                 </div>
             </div>
