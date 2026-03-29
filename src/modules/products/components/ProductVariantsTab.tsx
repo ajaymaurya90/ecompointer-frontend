@@ -12,10 +12,33 @@ import {
     type ProductVariantSummary,
 } from "@/modules/products/api/productVariantApi";
 import ProductVariantForm from "@/modules/products/components/ProductVariantForm";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import VariantGeneratorModal from "@/modules/products/components/VariantGeneratorModal";
+import { Pencil, Trash2, Plus, WandSparkles } from "lucide-react";
 
 interface ProductVariantsTabProps {
     productId: string;
+}
+
+function getAttributeSummary(variant: ProductVariant): string {
+    const attributeValues = (variant as any).attributeValues as
+        | Array<{
+            attributeValue: {
+                value: string;
+                attribute: {
+                    name: string;
+                };
+            };
+        }>
+        | undefined;
+
+    if (!attributeValues?.length) {
+        const fallback = [variant.size, variant.color].filter(Boolean);
+        return fallback.length ? fallback.join(" / ") : "-";
+    }
+
+    return attributeValues
+        .map((item) => `${item.attributeValue.attribute.name}: ${item.attributeValue.value}`)
+        .join(" / ");
 }
 
 export default function ProductVariantsTab({
@@ -26,6 +49,7 @@ export default function ProductVariantsTab({
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [showForm, setShowForm] = useState(false);
+    const [showGenerator, setShowGenerator] = useState(false);
     const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
 
     const loadData = async () => {
@@ -107,6 +131,14 @@ export default function ProductVariantsTab({
 
     return (
         <div className="space-y-6">
+            {showGenerator && (
+                <VariantGeneratorModal
+                    productId={productId}
+                    onClose={() => setShowGenerator(false)}
+                    onGenerated={loadData}
+                />
+            )}
+
             <div className="rounded-2xl border border-borderColorCustom bg-white">
                 <div className="border-b border-borderColorCustom px-6 py-4">
                     <div className="flex items-center justify-between">
@@ -114,13 +146,23 @@ export default function ProductVariantsTab({
                             Variant Overview
                         </h4>
 
-                        <button
-                            onClick={handleAdd}
-                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-                        >
-                            <Plus size={16} />
-                            Add Variant
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setShowGenerator(true)}
+                                className="inline-flex items-center gap-2 rounded-lg border border-borderColorCustom px-4 py-2 text-sm transition hover:bg-background"
+                            >
+                                <WandSparkles size={16} />
+                                Generate Variants
+                            </button>
+
+                            <button
+                                onClick={handleAdd}
+                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+                            >
+                                <Plus size={16} />
+                                Add Variant
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -174,7 +216,7 @@ export default function ProductVariantsTab({
                             No variants yet
                         </h5>
                         <p className="mt-2 text-textSecondary">
-                            Add your first variant to manage size, color, pricing and stock.
+                            Add your first variant or generate combinations automatically.
                         </p>
                     </div>
                 ) : (
@@ -182,8 +224,7 @@ export default function ProductVariantsTab({
                         <thead className="border-b border-borderColorCustom bg-background">
                             <tr>
                                 <th className="px-6 py-4 font-semibold text-textPrimary">SKU</th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">Size</th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">Color</th>
+                                <th className="px-6 py-4 font-semibold text-textPrimary">Attributes</th>
                                 <th className="px-6 py-4 font-semibold text-textPrimary">Retail Gross</th>
                                 <th className="px-6 py-4 font-semibold text-textPrimary">Wholesale Gross</th>
                                 <th className="px-6 py-4 font-semibold text-textPrimary">Stock</th>
@@ -199,8 +240,9 @@ export default function ProductVariantsTab({
                                     className="border-b border-borderColorCustom transition hover:bg-background"
                                 >
                                     <td className="px-6 py-4 text-textPrimary">{variant.sku}</td>
-                                    <td className="px-6 py-4 text-textSecondary">{variant.size || "-"}</td>
-                                    <td className="px-6 py-4 text-textSecondary">{variant.color || "-"}</td>
+                                    <td className="px-6 py-4 text-textSecondary">
+                                        {getAttributeSummary(variant)}
+                                    </td>
                                     <td className="px-6 py-4 text-textSecondary">{variant.retailGross}</td>
                                     <td className="px-6 py-4 text-textSecondary">{variant.wholesaleGross}</td>
                                     <td className="px-6 py-4 text-textSecondary">{variant.stock}</td>
