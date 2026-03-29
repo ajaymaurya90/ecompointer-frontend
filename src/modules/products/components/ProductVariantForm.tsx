@@ -5,6 +5,7 @@ import type {
     ProductVariant,
     ProductVariantFormData,
 } from "@/modules/products/api/productVariantApi";
+import VariantMediaTab from "@/modules/products/components/VariantMediaTab";
 
 interface ProductVariantFormProps {
     variant?: ProductVariant | null;
@@ -12,6 +13,8 @@ interface ProductVariantFormProps {
     onCancel: () => void;
     submitting?: boolean;
 }
+
+type VariantTab = "general" | "media";
 
 const emptyForm: ProductVariantFormData = {
     sku: "",
@@ -31,6 +34,7 @@ export default function ProductVariantForm({
     onCancel,
     submitting = false,
 }: ProductVariantFormProps) {
+    const [activeTab, setActiveTab] = useState<VariantTab>("general");
     const [form, setForm] = useState<ProductVariantFormData>(emptyForm);
 
     useEffect(() => {
@@ -91,14 +95,8 @@ export default function ProductVariantForm({
         });
     };
 
-    return (
-        <div className="rounded-2xl border border-borderColorCustom bg-white">
-            <div className="border-b border-borderColorCustom px-6 py-4">
-                <h4 className="text-lg font-semibold text-textPrimary">
-                    {variant ? "Edit Variant" : "Add Variant"}
-                </h4>
-            </div>
-
+    const renderGeneralTab = () => (
+        <>
             <div className="space-y-6 px-6 py-6">
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <div>
@@ -278,6 +276,65 @@ export default function ProductVariantForm({
                     {submitting ? "Saving..." : "Save Variant"}
                 </button>
             </div>
+        </>
+    );
+
+    const renderMediaTab = () => {
+        if (!variant?.id) {
+            return (
+                <div className="p-6">
+                    <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
+                        <h4 className="text-lg font-semibold text-textPrimary">
+                            Variant Media
+                        </h4>
+                        <p className="mt-2 text-textSecondary">
+                            Save the variant first before adding media.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="p-6">
+                <VariantMediaTab variantId={variant.id} />
+            </div>
+        );
+    };
+
+    return (
+        <div className="rounded-2xl border border-borderColorCustom bg-white">
+            <div className="border-b border-borderColorCustom px-6 py-4">
+                <h4 className="text-lg font-semibold text-textPrimary">
+                    {variant ? "Edit Variant" : "Add Variant"}
+                </h4>
+            </div>
+
+            <div className="border-b border-borderColorCustom px-6 pt-4">
+                <div className="flex gap-8">
+                    <button
+                        onClick={() => setActiveTab("general")}
+                        className={`pb-3 text-sm ${activeTab === "general"
+                                ? "border-b-2 border-primary font-medium text-primary"
+                                : "text-textSecondary"
+                            }`}
+                    >
+                        General
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab("media")}
+                        className={`pb-3 text-sm ${activeTab === "media"
+                                ? "border-b-2 border-primary font-medium text-primary"
+                                : "text-textSecondary"
+                            }`}
+                    >
+                        Media
+                    </button>
+                </div>
+            </div>
+
+            {activeTab === "general" ? renderGeneralTab() : renderMediaTab()}
         </div>
     );
 }

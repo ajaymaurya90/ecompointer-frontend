@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProductForm from "@/modules/products/components/ProductForm";
 import ProductVariantsTab from "@/modules/products/components/ProductVariantsTab";
+import ProductMediaTab from "@/modules/products/components/ProductMediaTab";
 import type {
     Product,
     ProductFormData,
@@ -212,16 +213,20 @@ export default function ProductFormPage({
         }
 
         if (activeTab === "media") {
-            return (
-                <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
-                    <h4 className="text-lg font-semibold text-textPrimary">
-                        Media
-                    </h4>
-                    <p className="mt-2 text-textSecondary">
-                        Media management will be added next.
-                    </p>
-                </div>
-            );
+            if (mode === "create" || !productId) {
+                return (
+                    <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
+                        <h4 className="text-lg font-semibold text-textPrimary">
+                            Media
+                        </h4>
+                        <p className="mt-2 text-textSecondary">
+                            Save the product first before adding media.
+                        </p>
+                    </div>
+                );
+            }
+
+            return <ProductMediaTab productId={productId} />;
         }
 
         return (
@@ -282,8 +287,8 @@ export default function ProductFormPage({
                         <button
                             onClick={() => setActiveTab("general")}
                             className={`pb-3 text-sm ${activeTab === "general"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
+                                ? "border-b-2 border-primary font-medium text-primary"
+                                : "text-textSecondary"
                                 }`}
                         >
                             General
@@ -292,8 +297,8 @@ export default function ProductFormPage({
                         <button
                             onClick={() => setActiveTab("variants")}
                             className={`pb-3 text-sm ${activeTab === "variants"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
+                                ? "border-b-2 border-primary font-medium text-primary"
+                                : "text-textSecondary"
                                 }`}
                         >
                             Variants
@@ -302,8 +307,8 @@ export default function ProductFormPage({
                         <button
                             onClick={() => setActiveTab("media")}
                             className={`pb-3 text-sm ${activeTab === "media"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
+                                ? "border-b-2 border-primary font-medium text-primary"
+                                : "text-textSecondary"
                                 }`}
                         >
                             Media
@@ -312,8 +317,8 @@ export default function ProductFormPage({
                         <button
                             onClick={() => setActiveTab("seo")}
                             className={`pb-3 text-sm ${activeTab === "seo"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
+                                ? "border-b-2 border-primary font-medium text-primary"
+                                : "text-textSecondary"
                                 }`}
                         >
                             SEO
