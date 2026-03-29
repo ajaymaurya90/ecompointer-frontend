@@ -1,0 +1,247 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import ProductForm from "@/modules/products/components/ProductForm";
+import type {
+    Product,
+    ProductFormData,
+    ProductOption,
+} from "@/modules/products/types/product";
+import {
+    createProduct,
+    deleteProduct,
+    getProductBrands,
+    getProductById,
+    getProductCategories,
+    updateProduct,
+} from "@/modules/products/api/productApi";
+
+interface ProductFormPageProps {
+    mode: "create" | "edit";
+    productId?: string;
+}
+
+const emptyForm: ProductFormData = {
+    name: "",
+    productCode: "",
+    brandId: "",
+    categoryId: "",
+    description: "",
+};
+
+export default function ProductFormPage({
+    mode,
+    productId,
+}: ProductFormPageProps) {
+    const router = useRouter();
+
+    const [loading, setLoading] = useState(mode === "edit");
+    const [saving, setSaving] = useState(false);
+    const [form, setForm] = useState<ProductFormData>(emptyForm);
+    const [brands, setBrands] = useState<ProductOption[]>([]);
+    const [categories, setCategories] = useState<ProductOption[]>([]);
+    const [productName, setProductName] = useState("Create Product");
+
+    useEffect(() => {
+        const init = async () => {
+            try {
+                const [brandOptions, categoryOptions] = await Promise.all([
+                    getProductBrands(),
+                    getProductCategories(),
+                ]);
+
+                setBrands(brandOptions);
+                setCategories(categoryOptions);
+
+                if (mode === "edit" && productId) {
+                    const product: Product = await getProductById(productId);
+                    console.log("Loaded product:", product);
+
+                    setForm({
+                        name: product?.name ?? "",
+                        productCode: product?.productCode ?? "",
+                        brandId: product?.brandId ?? product?.brand?.id ?? "",
+                        categoryId: product?.categoryId ?? product?.category?.id ?? "",
+                        description: product?.description ?? "",
+                    });
+
+                    setProductName(product?.name ?? "Edit Product");
+                }
+            } catch (error) {
+                console.error("Failed to load product form data:", error);
+                alert("Failed to load product form data");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        init();
+    }, [mode, productId]);
+
+    const handleChange = (field: keyof ProductFormData, value: string) => {
+        setForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const handleCancel = () => {
+        router.push("/dashboard/products");
+    };
+
+    const handleSave = async () => {
+        if (!form.name.trim()) {
+            alert("Product name is required");
+            return;
+        }
+
+        if (!form.productCode.trim()) {
+            alert("Product code is required");
+            return;
+        }
+
+        if (!form.brandId) {
+            alert("Please select a brand");
+            return;
+        }
+
+        if (!form.categoryId) {
+            alert("Please select a category");
+            return;
+        }
+
+        setSaving(true);
+
+        try {
+            if (mode === "create") {
+                await createProduct(form);
+            } else if (productId) {
+                await updateProduct(productId, form);
+            }
+
+            router.push("/dashboard/products");
+        } catch (error: any) {
+            console.error(error);
+            alert(
+                error?.response?.data?.message || "Failed to save product"
+            );
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!productId) return;
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${productName}"?`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            await deleteProduct(productId);
+            router.push("/dashboard/products");
+        } catch (error: any) {
+            console.error(error);
+            alert(
+                error?.response?.data?.message || "Failed to delete product"
+            );
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="rounded-2xl border border-borderColorCustom bg-card p-6 text-textSecondary">
+                Loading product...
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between rounded-2xl border border-borderColorCustom bg-card px-6 py-4">
+                <div>
+                    <div className="text-sm text-textSecondary">
+                        Product settings
+                    </div>
+                    <h2 className="text-2xl font-semibold text-textPrimary">
+                        {mode === "create" ? "Create Product" : productName}
+                    </h2>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleCancel}
+                        className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
+                    >
+                        {saving ? "Saving..." : "Save"}
+                    </button>
+                </div>
+            </div>
+
+            <div className="rounded-2xl border border-borderColorCustom bg-card">
+                <div className="border-b border-borderColorCustom px-6 pt-4">
+                    <div className="flex gap-8">
+                        <button className="border-b-2 border-primary pb-3 text-sm font-medium text-primary">
+                            General
+                        </button>
+                        <button className="pb-3 text-sm text-textSecondary">
+                            Variants
+                        </button>
+                        <button className="pb-3 text-sm text-textSecondary">
+                            Media
+                        </button>
+                        <button className="pb-3 text-sm text-textSecondary">
+                            SEO
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-6">
+                    <ProductForm
+                        form={form}
+                        brands={brands}
+                        categories={categories}
+                        onChange={handleChange}
+                    />
+
+                    <div className="mt-6 flex items-center justify-end gap-3">
+                        {mode === "edit" && (
+                            <button
+                                onClick={handleDelete}
+                                className="rounded-lg border border-red-200 px-4 py-2 text-red-600 transition hover:bg-red-50"
+                            >
+                                Delete
+                            </button>
+                        )}
+
+                        <button
+                            onClick={handleCancel}
+                            className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background"
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {saving ? "Saving..." : "Save"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

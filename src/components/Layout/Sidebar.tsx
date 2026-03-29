@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { logout } from "@/lib/auth";
+import { logout } from "@/modules/auth/lib/logout";
 import { useState } from "react";
 import {
     LayoutDashboard,
@@ -20,119 +20,104 @@ const Sidebar = () => {
     const [openMenu, setOpenMenu] = useState<string | null>(null);
 
     const isActive = (path: string) => pathname === path;
+    const isProductsSectionActive = pathname.startsWith("/dashboard/products");
 
     return (
         <aside
-            className={`h-screen 
-                        ${collapsed ? "w-20" : "w-64"}
-                        transition-all duration-300
-                        bg-gradient-to-b 
-                        from-slate-900 via-blue-950 to-slate-950
-                        text-slate-200 
-                        flex flex-col justify-between`}
+            className={`${collapsed ? "w-24" : "w-72"} app-sidebar flex flex-col transition-all duration-300`}
         >
-            {/* Top Section */}
-            <div className="p-4">
-
-                {/* Logo + Toggle */}
-                <div className="flex items-center justify-between mb-8">
+            <div className="flex-1">
+                {/* Header */}
+                <div className="h-20 px-5 flex items-center justify-between border-b border-borderSoft">
                     {!collapsed && (
-                        <h2 className="text-lg font-semibold tracking-wide text-white">
+                        <h2 className="text-[22px] font-bold tracking-tight app-text-sidebar">
                             ECOMPOINTER
                         </h2>
                     )}
 
                     <button
-                        onClick={() => setCollapsed(!collapsed)}
-                        className="p-1 rounded-md hover:bg-white/10 transition"
+                        onClick={() => setCollapsed((prev) => !prev)}
+                        className="interactive-button flex h-10 w-10 items-center justify-center rounded-xl app-text-sidebar-muted hover:text-textSidebar"
+                        type="button"
+                        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
                         {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
                     </button>
                 </div>
 
-                <nav className="space-y-2">
-
+                {/* Nav */}
+                <nav className="px-4 py-6 space-y-2">
                     {/* Dashboard */}
                     <Link
                         href="/dashboard"
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition
-                            ${isActive("/dashboard")
-                                ? "bg-blue-600/20 text-white border border-blue-500/30"
-                                : "hover:bg-white/5 hover:text-white text-slate-300"
+                        className={`sidebar-nav-item flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isActive("/dashboard") ? "active" : "app-text-sidebar-muted"
                             }`}
                     >
-                        <LayoutDashboard size={18} />
+                        <LayoutDashboard size={18} className="shrink-0" />
                         {!collapsed && <span>Dashboard</span>}
                     </Link>
 
-                    {/* Products with Submenu */}
+                    {/* Products with submenu */}
                     <div
                         className="relative"
                         onMouseEnter={() => setOpenMenu("products")}
                         onMouseLeave={() => setOpenMenu(null)}
                     >
                         <div
-                            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm cursor-pointer transition
-                                ${pathname.startsWith("/dashboard/products")
-                                    ? "bg-blue-600/20 text-white border border-blue-500/30"
-                                    : "hover:bg-white/5 hover:text-white text-slate-300"
+                            className={`sidebar-nav-item flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium cursor-pointer ${isProductsSectionActive ? "active" : "app-text-sidebar-muted"
                                 }`}
                         >
-                            <Package size={18} />
+                            <Package size={18} className="shrink-0" />
                             {!collapsed && <span>Products</span>}
                         </div>
 
-                        {/* Flyout submenu */}
                         {openMenu === "products" && (
                             <div
-                                className={`absolute top-0 
-                                            ${collapsed ? "left-full ml-3" : "left-full ml-2"}
-                                            w-48
-                                            bg-slate-900 border border-slate-800
-                                            rounded-lg shadow-lg p-2 space-y-1`}
+                                className={`absolute top-0 z-50 ${collapsed ? "left-full ml-3" : "left-full ml-2"
+                                    } w-52 rounded-2xl app-card p-2 space-y-1`}
                             >
                                 <Link
                                     href="/dashboard/products"
-                                    className="flex items-center gap-2 px-3 py-2 rounded-md text-sm
-                                               text-slate-300 hover:bg-white/5 hover:text-white transition"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products") ? "active" : "app-text-secondary"
+                                        }`}
                                 >
                                     <Package size={16} />
-                                    Product List
+                                    <span>Product List</span>
                                 </Link>
 
                                 <Link
                                     href="/dashboard/products/categories"
-                                    className="flex items-center gap-2 px-3 py-2 rounded-md text-sm
-                                               text-slate-300 hover:bg-white/5 hover:text-white transition"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products") ? "active" : "app-text-secondary"
+                                        }`}
                                 >
                                     <FolderTree size={16} />
-                                    Categories
+                                    <span>Categories</span>
                                 </Link>
 
                                 <Link
                                     href="/dashboard/products/brands"
-                                    className="flex items-center gap-2 px-3 py-2 rounded-md text-sm
-                                               text-slate-300 hover:bg-white/5 hover:text-white transition"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products") ? "active" : "app-text-secondary"
+                                        }`}
                                 >
                                     <Store size={16} />
-                                    Brands
+                                    <span>Brands</span>
                                 </Link>
                             </div>
                         )}
                     </div>
-
                 </nav>
             </div>
 
-            {/* Bottom Section */}
-            <div className="p-4 border-t border-slate-800">
+            {/* Footer */}
+            <div className="p-4 border-t border-borderSoft">
                 <button
                     onClick={logout}
-                    className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm
-                               bg-slate-800 text-slate-200
-                               hover:bg-slate-700 transition"
+                    type="button"
+                    className="sidebar-nav-item w-full flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium app-text-sidebar-muted"
                 >
-                    <LogOut size={18} />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-borderSoft app-muted-surface shrink-0">
+                        <LogOut size={16} />
+                    </div>
                     {!collapsed && <span>Logout</span>}
                 </button>
             </div>

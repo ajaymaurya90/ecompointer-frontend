@@ -1,26 +1,178 @@
 @import "tailwindcss";
 
+/* light mode */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-muted: #f1f5f9;
+  --bg-sidebar: #2a2a2a;
+  --bg-topbar: #ffffff;
+  --bg-input: #ffffff;
+
+  --border-color: #d6dde8;
+  --border-soft: #e5ebf3;
+
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-sidebar: #f9fafb;
+  --text-sidebar-muted: #9ca3af;
+
+  --sidebar-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-active: rgba(255, 255, 255, 0.12);
+
+  --shadow-card: 0 2px 8px rgba(15, 23, 42, 0.05), 0 16px 36px rgba(15, 23, 42, 0.06);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* dark mode */
+html.dark {
+  --bg-main: #212121;
+  --bg-card: #2a2a2a;
+  --bg-card-muted: #303030;
+  --bg-sidebar: #171717;
+  --bg-topbar: #1f1f1f;
+  --bg-input: #2a2a2a;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --border-color: #2f2f2f;
+  --border-soft: #262626;
+
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+
+  --text-primary: #f5f5f5;
+  --text-secondary: #b4b4b4;
+  --text-sidebar: #fafafa;
+  --text-sidebar-muted: #9ca3af;
+
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active: rgba(255, 255, 255, 0.10);
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.2), 0 16px 36px rgba(0, 0, 0, 0.24);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-main);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* explicit surface utilities */
+.app-shell {
+  background-color: var(--bg-main);
+}
+
+.app-sidebar {
+  background-color: var(--bg-sidebar);
+  color: var(--text-sidebar);
+  border-right: 1px solid var(--border-soft);
+}
+
+.app-topbar {
+  background-color: var(--bg-topbar);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.app-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-card);
+}
+
+.app-input {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-card);
+}
+
+.app-muted-surface {
+  background-color: var(--bg-card-muted);
+}
+
+.app-text-primary {
+  color: var(--text-primary);
+}
+
+.app-text-secondary {
+  color: var(--text-secondary);
+}
+
+.app-text-sidebar {
+  color: var(--text-sidebar);
+}
+
+.app-text-sidebar-muted {
+  color: var(--text-sidebar-muted);
+}
+
+/* interactive effects */
+.interactive-card {
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.interactive-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.14), var(--shadow-card);
+}
+
+.interactive-button:active {
+  transform: scale(0.97);
+}
+
+html.dark .interactive-card:hover {
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32), var(--shadow-card);
+}
+
+.interactive-menu {
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.interactive-menu:hover {
+  transform: translateX(3px);
+}
+
+.interactive-button {
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.interactive-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.10);
+}
+
+html.dark .interactive-button:hover {
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+.sidebar-nav-item {
+  position: relative;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.sidebar-nav-item:hover {
+  background-color: var(--sidebar-hover);
+  color: var(--text-sidebar);
+  transform: translateX(3px);
+}
+
+.sidebar-nav-item.active {
+  background-color: var(--sidebar-active);
+  color: var(--text-sidebar);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.submenu-item {
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.submenu-item:hover {
+  background-color: var(--bg-card-muted);
+  color: var(--text-primary);
+}
+
+.submenu-item.active {
+  background-color: var(--bg-card-muted);
+  color: var(--text-primary);
 }

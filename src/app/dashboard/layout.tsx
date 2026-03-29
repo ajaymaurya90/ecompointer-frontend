@@ -1,8 +1,8 @@
 "use client";
 
-import Sidebar from "@/components/Layout/Sidebar";
-import TopNav from "@/components/Layout/TopNav";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import Sidebar from "@/components/layout/Sidebar";
+import TopNav from "@/components/layout/TopNav";
+import ProtectedRoute from "@/modules/auth/components/ProtectedRoute";
 
 export default function DashboardLayout({
     children,
@@ -11,7 +11,7 @@ export default function DashboardLayout({
 }) {
     return (
         <ProtectedRoute allowedRoles={["BRAND_OWNER"]}>
-            <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/40">
+            <div className="flex min-h-screen bg-background text-textPrimary">
 
                 {/* Sidebar */}
                 <Sidebar />
@@ -23,7 +23,7 @@ export default function DashboardLayout({
                     <TopNav />
 
                     {/* Page Content */}
-                    <main className="flex-1 overflow-y-auto p-6 md:p-8">
+                    <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-background">
                         <div className="max-w-7xl mx-auto">
                             {children}
                         </div>
