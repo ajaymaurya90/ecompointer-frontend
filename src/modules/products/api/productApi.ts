@@ -5,18 +5,31 @@ import type {
     ProductOption,
 } from "@/modules/products/types/product";
 
-interface ProductListResponse {
-    data: Product[];
-    meta: {
-        total: number;
-        page: number;
-        lastPage: number;
-    };
+interface ProductListMeta {
+    total: number;
+    page: number;
+    lastPage: number;
 }
 
-export async function getProducts(page = 1): Promise<ProductListResponse> {
+interface ProductListResponse {
+    data: Product[];
+    meta: ProductListMeta;
+}
+
+export interface ProductListParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    categoryId?: string;
+    sortBy?: "createdAt" | "name" | "productCode";
+    order?: "asc" | "desc";
+}
+
+export async function getProducts(
+    params: ProductListParams = {}
+): Promise<ProductListResponse> {
     const response = await api.get("/products", {
-        params: { page },
+        params,
     });
 
     return response.data;
@@ -24,10 +37,6 @@ export async function getProducts(page = 1): Promise<ProductListResponse> {
 
 export async function getProductById(productId: string): Promise<Product> {
     const response = await api.get(`/products/${productId}`);
-
-    // Supports both:
-    // response.data = product
-    // response.data.data = product
     return response.data?.data ?? response.data;
 }
 
@@ -62,7 +71,10 @@ export async function getProductCategories(): Promise<ProductOption[]> {
     return flattenCategories(response.data || []);
 }
 
-function flattenCategories(categories: any[], level = 0): ProductOption[] {
+function flattenCategories(
+    categories: any[],
+    level = 0
+): ProductOption[] {
     return categories.flatMap((category) => {
         const prefix = level > 0 ? `${"— ".repeat(level)}` : "";
 
