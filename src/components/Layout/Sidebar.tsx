@@ -9,6 +9,9 @@ import {
     Package,
     FolderTree,
     Store,
+    Users,
+    UserPlus,
+    Layers3,
     LogOut,
     ChevronLeft,
     ChevronRight,
@@ -21,6 +24,7 @@ const Sidebar = () => {
 
     const isActive = (path: string) => pathname === path;
     const isProductsSectionActive = pathname.startsWith("/dashboard/products");
+    const isCustomersSectionActive = pathname.startsWith("/dashboard/customers") || pathname.startsWith("/dashboard/customer-groups");
 
     return (
         <aside
@@ -78,7 +82,9 @@ const Sidebar = () => {
                             >
                                 <Link
                                     href="/dashboard/products"
-                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products") ? "active" : "app-text-secondary"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products")
+                                            ? "active"
+                                            : "app-text-secondary"
                                         }`}
                                 >
                                     <Package size={16} />
@@ -87,7 +93,9 @@ const Sidebar = () => {
 
                                 <Link
                                     href="/dashboard/products/categories"
-                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products") ? "active" : "app-text-secondary"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products/categories")
+                                            ? "active"
+                                            : "app-text-secondary"
                                         }`}
                                 >
                                     <FolderTree size={16} />
@@ -96,11 +104,68 @@ const Sidebar = () => {
 
                                 <Link
                                     href="/dashboard/products/brands"
-                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products") ? "active" : "app-text-secondary"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products/brands")
+                                            ? "active"
+                                            : "app-text-secondary"
                                         }`}
                                 >
                                     <Store size={16} />
                                     <span>Brands</span>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Customers with submenu */}
+                    <div
+                        className="relative"
+                        onMouseEnter={() => setOpenMenu("customers")}
+                        onMouseLeave={() => setOpenMenu(null)}
+                    >
+                        <div
+                            className={`sidebar-nav-item flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium cursor-pointer ${isCustomersSectionActive ? "active" : "app-text-sidebar-muted"
+                                }`}
+                        >
+                            <Users size={18} className="shrink-0" />
+                            {!collapsed && <span>Customers</span>}
+                        </div>
+
+                        {openMenu === "customers" && (
+                            <div
+                                className={`absolute top-0 z-50 ${collapsed ? "left-full ml-3" : "left-full ml-2"
+                                    } w-56 rounded-2xl app-card p-2 space-y-1`}
+                            >
+                                <Link
+                                    href="/dashboard/customers"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/customers")
+                                            ? "active"
+                                            : "app-text-secondary"
+                                        }`}
+                                >
+                                    <Users size={16} />
+                                    <span>Customer List</span>
+                                </Link>
+
+                                <Link
+                                    href="/dashboard/customers/new"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/customers/new")
+                                            ? "active"
+                                            : "app-text-secondary"
+                                        }`}
+                                >
+                                    <UserPlus size={16} />
+                                    <span>Add Customer</span>
+                                </Link>
+
+                                <Link
+                                    href="/dashboard/customer-groups"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/customer-groups")
+                                            ? "active"
+                                            : "app-text-secondary"
+                                        }`}
+                                >
+                                    <Layers3 size={16} />
+                                    <span>Customer Groups</span>
                                 </Link>
                             </div>
                         )}
