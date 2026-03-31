@@ -1,3 +1,21 @@
+import { api } from "@/lib/http";
+import type {
+    AuthProfileResponse,
+    UpdateProfilePayload,
+} from "@/modules/auth/types/auth";
+
+export async function getMyProfile(): Promise<AuthProfileResponse> {
+    const response = await api.get("/auth/profile");
+    return response.data?.data ?? response.data;
+}
+
+export async function updateMyProfile(
+    data: UpdateProfilePayload
+): Promise<AuthProfileResponse> {
+    const response = await api.patch("/auth/profile", data);
+    return response.data?.data ?? response.data;
+}
+
 export const logoutRequest = async () => {
     const token = localStorage.getItem("accessToken");
 

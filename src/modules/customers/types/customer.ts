@@ -194,9 +194,6 @@ export interface CustomerAddressFormData {
     addressLine2?: string;
     landmark?: string;
     city: string;
-    district?: string;
-    state?: string;
-    country?: string;
     postalCode?: string;
     countryId?: string;
     stateId?: string;
