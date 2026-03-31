@@ -11,11 +11,7 @@ import type { Customer, CustomerGroup } from "@/modules/customers/types/customer
 
 interface CustomerGroupMemberManagerProps {
     groupId: string;
-}
-
-interface CustomerGroupMemberManagerProps {
-    groupId: string;
-    onMembersChanged?: () => Promise<void> | void;
+    onMembersChanged?: (delta: number) => void;
 }
 
 function getCustomerName(customer: {
@@ -95,7 +91,7 @@ export default function CustomerGroupMemberManager({
             await loadData(search);
 
             if (onMembersChanged) {
-                await onMembersChanged();
+                onMembersChanged(selectedIds.length);
             }
         } catch (err: any) {
             setError(err?.response?.data?.message || "Failed to assign customers");
@@ -115,7 +111,7 @@ export default function CustomerGroupMemberManager({
             await loadData(search);
 
             if (onMembersChanged) {
-                await onMembersChanged();
+                onMembersChanged(-1);
             }
         } catch (err: any) {
             setError(err?.response?.data?.message || "Failed to remove customer");

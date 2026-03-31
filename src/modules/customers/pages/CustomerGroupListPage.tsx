@@ -88,6 +88,21 @@ export default function CustomerGroupListPage() {
         }
     }
 
+    function updateGroupMemberCount(groupId: string, delta: number) {
+        setGroups((prev) =>
+            prev.map((group) => {
+                if (group.id !== groupId) return group;
+
+                const current = group.memberCount ?? 0;
+
+                return {
+                    ...group,
+                    memberCount: Math.max(0, current + delta),
+                };
+            })
+        );
+    }
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-5">
@@ -202,7 +217,9 @@ export default function CustomerGroupListPage() {
                                         <div className="mt-5">
                                             <CustomerGroupMemberManager
                                                 groupId={group.id}
-                                                onMembersChanged={fetchGroups}
+                                                onMembersChanged={(delta) =>
+                                                    updateGroupMemberCount(group.id, delta)
+                                                }
                                             />
                                         </div>
                                     ) : null}
