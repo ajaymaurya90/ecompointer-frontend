@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Globe, MapPin, User } from "lucide-react";
+import { Globe, MapPin, Map, User } from "lucide-react";
 
 const settingsItems = [
     {
@@ -22,6 +22,12 @@ const settingsItems = [
         href: "/dashboard/settings/language",
         icon: Globe,
         description: "Choose your default language preferences",
+    },
+    {
+        label: "Service Area",
+        href: "/dashboard/settings/service-area",
+        icon: Map,
+        description: "Control active states and districts for orders",
     },
 ];
 
@@ -47,15 +53,15 @@ export default function SettingsNav() {
                             key={item.href}
                             href={item.href}
                             className={`block rounded-2xl border px-4 py-3 transition ${isActive
-                                    ? "border-slate-900 bg-slate-900 text-white"
-                                    : "border-transparent bg-transparent text-slate-700 hover:border-borderSoft hover:bg-slate-50"
+                                ? "border-slate-900 bg-slate-900 text-white"
+                                : "border-transparent bg-transparent text-slate-700 hover:border-borderSoft hover:bg-slate-50"
                                 }`}
                         >
                             <div className="flex items-start gap-3">
                                 <div
                                     className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl ${isActive
-                                            ? "bg-white/10 text-white"
-                                            : "bg-slate-100 text-slate-700"
+                                        ? "bg-white/10 text-white"
+                                        : "bg-slate-100 text-slate-700"
                                         }`}
                                 >
                                     <Icon size={18} />

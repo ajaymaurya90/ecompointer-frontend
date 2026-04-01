@@ -83,3 +83,66 @@ export type BrandOwnerLanguage = {
 export type UpdateBrandOwnerLanguagePayload = {
     language: "en" | "de" | "hi";
 };
+
+export type ServiceAreaSource = "default" | "override";
+
+export type BrandOwnerServiceAreaState = {
+    id: string;
+    name: string;
+    code?: string | null;
+    masterActive: boolean;
+    isActive: boolean;
+    source: ServiceAreaSource;
+    districtCount: number;
+    activeDistrictCount: number;
+};
+
+export type BrandOwnerServiceAreaSummary = {
+    totalStates: number;
+    activeStates: number;
+    inactiveStates: number;
+};
+
+export type BrandOwnerServiceArea = {
+    country: {
+        id: string;
+        code: string;
+        name: string;
+    };
+    summary: BrandOwnerServiceAreaSummary;
+    states: BrandOwnerServiceAreaState[];
+};
+
+export type BrandOwnerServiceAreaDistrict = {
+    id: string;
+    name: string;
+    masterActive: boolean;
+    isActive: boolean;
+    source: ServiceAreaSource;
+};
+
+export type BrandOwnerServiceAreaDistrictSummary = {
+    totalDistricts: number;
+    activeDistricts: number;
+    inactiveDistricts: number;
+};
+
+export type BrandOwnerServiceAreaDistrictResponse = {
+    state: {
+        id: string;
+        name: string;
+        code?: string | null;
+        isActive: boolean;
+        source: ServiceAreaSource;
+    };
+    summary: BrandOwnerServiceAreaDistrictSummary;
+    districts: BrandOwnerServiceAreaDistrict[];
+};
+
+export type UpdateServiceAreaStatePayload = {
+    isActive: boolean;
+};
+
+export type UpdateServiceAreaDistrictPayload = {
+    isActive: boolean;
+};

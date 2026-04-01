@@ -227,6 +227,17 @@ const Sidebar = () => {
                                     <Globe size={16} />
                                     <span>Language</span>
                                 </Link>
+
+                                <Link
+                                    href="/dashboard/settings/service-area"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/settings/language")
+                                        ? "active"
+                                        : "app-text-secondary"
+                                        }`}
+                                >
+                                    <Globe size={16} />
+                                    <span>Service Area</span>
+                                </Link>
                             </div>
                         )}
                     </div>
