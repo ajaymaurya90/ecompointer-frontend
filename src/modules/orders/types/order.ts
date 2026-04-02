@@ -1,3 +1,5 @@
+import type { Customer, CustomerAddress } from "@/modules/customers/types/customer";
+
 export type BuyerType = "CUSTOMER" | "SHOP_OWNER";
 
 export type OrderStatus =
@@ -265,4 +267,88 @@ export interface OrderDetail {
 export interface OrderDetailResponse {
     message: string;
     data: OrderDetail;
+}
+
+export interface ShopOwnerSearchItem {
+    id: string;
+    shopName: string;
+    ownerName: string;
+    phone: string;
+    email?: string | null;
+    shopSlug: string;
+    city?: string | null;
+    state?: string | null;
+    isActive: boolean;
+}
+
+export interface OrderSearchProductItem {
+    id: string;
+    productId: string;
+    productName: string;
+    productCode: string;
+    brandOwnerId: string;
+    brand: {
+        id: string;
+        name: string;
+    };
+    sku: string;
+    variantLabel?: string | null;
+    size?: string | null;
+    color?: string | null;
+    stock: number;
+    taxRate: number;
+    retailGross: number;
+    wholesaleGross: number;
+    isActive?: boolean;
+    shopOrderRules: {
+        minLineQty: number;
+        minCartQty: number;
+        allowBelowMinLineQtyAfterCartMin: boolean;
+    };
+}
+
+export interface CreateOrderLineItem {
+    brandOwnerId: string;
+    productVariantId: string;
+    productId: string;
+    productName: string;
+    productCode: string;
+    sku: string;
+    variantLabel?: string | null;
+    quantity: number;
+    stock: number;
+    taxRate: number;
+    unitPrice: number;
+    lineSubtotal: number;
+    taxAmount: number;
+    lineTotal: number;
+    shopOrderRules?: {
+        minLineQty: number;
+        minCartQty: number;
+        allowBelowMinLineQtyAfterCartMin: boolean;
+    };
+}
+
+export interface CreateOrderPayload {
+    buyerType: BuyerType;
+    brandOwnerId: string;
+    customerId?: string;
+    shopOwnerId?: string;
+    salesChannel?: SalesChannelType;
+    billingAddressId?: string;
+    shippingAddressId?: string;
+    shippingAmount?: string;
+    discountAmount?: string;
+    notes?: string;
+    items: {
+        productVariantId: string;
+        quantity: number;
+    }[];
+}
+
+export interface OrderBuyerSelection {
+    customer: Customer | null;
+    shopOwner: ShopOwnerSearchItem | null;
+    billingAddress: CustomerAddress | null;
+    shippingAddress: CustomerAddress | null;
 }

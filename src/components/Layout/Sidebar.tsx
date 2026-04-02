@@ -22,6 +22,7 @@ import {
     ShoppingCart,
     Receipt,
     ClipboardList,
+    Link2,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -34,6 +35,7 @@ const Sidebar = () => {
     const isCustomersSectionActive =
         pathname.startsWith("/dashboard/customers") ||
         pathname.startsWith("/dashboard/customer-groups");
+    const isShopOwnersSectionActive = pathname.startsWith("/dashboard/shop-owners");
     const isOrdersSectionActive = pathname.startsWith("/dashboard/orders");
     const isSettingsSectionActive = pathname.startsWith("/dashboard/settings");
 
@@ -177,6 +179,61 @@ const Sidebar = () => {
                                 >
                                     <Layers3 size={16} />
                                     <span>Customer Groups</span>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Shop Owners with submenu */}
+                    <div
+                        className="relative"
+                        onMouseEnter={() => setOpenMenu("shopOwners")}
+                        onMouseLeave={() => setOpenMenu(null)}
+                    >
+                        <div
+                            className={`sidebar-nav-item flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium cursor-pointer ${isShopOwnersSectionActive ? "active" : "app-text-sidebar-muted"
+                                }`}
+                        >
+                            <Store size={18} className="shrink-0" />
+                            {!collapsed && <span>Shop Owners</span>}
+                        </div>
+
+                        {openMenu === "shopOwners" && (
+                            <div
+                                className={`absolute top-0 z-50 ${collapsed ? "left-full ml-3" : "left-full ml-2"
+                                    } w-56 rounded-2xl app-card p-2 space-y-1`}
+                            >
+                                <Link
+                                    href="/dashboard/shop-owners"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/shop-owners")
+                                            ? "active"
+                                            : "app-text-secondary"
+                                        }`}
+                                >
+                                    <Store size={16} />
+                                    <span>Shop Owner List</span>
+                                </Link>
+
+                                <Link
+                                    href="/dashboard/shop-owners/new"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/shop-owners/new")
+                                            ? "active"
+                                            : "app-text-secondary"
+                                        }`}
+                                >
+                                    <UserPlus size={16} />
+                                    <span>Add Shop Owner</span>
+                                </Link>
+
+                                <Link
+                                    href="/dashboard/shop-owners/link-existing"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/shop-owners/link-existing")
+                                            ? "active"
+                                            : "app-text-secondary"
+                                        }`}
+                                >
+                                    <Link2 size={16} />
+                                    <span>Link Existing</span>
                                 </Link>
                             </div>
                         )}
