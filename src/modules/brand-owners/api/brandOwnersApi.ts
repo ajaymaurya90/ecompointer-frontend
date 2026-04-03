@@ -9,6 +9,8 @@ import type {
     BrandOwnerServiceAreaDistrictResponse,
     UpdateServiceAreaDistrictPayload,
     UpdateServiceAreaStatePayload,
+    BrandOwnerShopOrderRules,
+    UpdateBrandOwnerShopOrderRulesPayload,
 } from "@/modules/brand-owners/types/brandOwner";
 import type {
     BrandOwnerLanguage,
@@ -108,5 +110,17 @@ export async function updateMyBrandOwnerServiceAreaDistrict(
         `/brand-owners/me/service-area/districts/${districtId}`,
         data
     );
+    return response.data?.data ?? response.data;
+}
+
+export async function getMyBrandOwnerShopOrderRules(): Promise<BrandOwnerShopOrderRules> {
+    const response = await api.get("/brand-owners/me/shop-order-rules");
+    return response.data?.data ?? response.data;
+}
+
+export async function updateMyBrandOwnerShopOrderRules(
+    data: UpdateBrandOwnerShopOrderRulesPayload
+): Promise<BrandOwnerShopOrderRules> {
+    const response = await api.patch("/brand-owners/me/shop-order-rules", data);
     return response.data?.data ?? response.data;
 }

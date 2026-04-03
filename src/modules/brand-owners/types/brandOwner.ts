@@ -146,3 +146,17 @@ export type UpdateServiceAreaStatePayload = {
 export type UpdateServiceAreaDistrictPayload = {
     isActive: boolean;
 };
+
+export interface BrandOwnerShopOrderRules {
+    id: string;
+    businessName: string;
+    minShopOrderLineQty: number;
+    minShopOrderCartQty: number;
+    allowBelowMinLineQtyAfterCartMin: boolean;
+}
+
+export interface UpdateBrandOwnerShopOrderRulesPayload {
+    minShopOrderLineQty: number;
+    minShopOrderCartQty: number;
+    allowBelowMinLineQtyAfterCartMin: boolean;
+}

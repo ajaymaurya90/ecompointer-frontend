@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ShopOwnerFormData } from "@/modules/shop-owners/types/shopOwner";
+import { cleanString, requiredString } from "@/lib/utils/formHelpers";
 
 type Props = {
     isSubmitting?: boolean;
@@ -10,41 +11,87 @@ type Props = {
     onSubmit: (data: ShopOwnerFormData) => Promise<void> | void;
 };
 
+type ShopOwnerFormState = {
+    shopName: string;
+    ownerName: string;
+    phone: string;
+    email: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode: string;
+    shopSlug: string;
+    qrCodeUrl: string;
+    language: string;
+    businessName: string;
+    legalEntityName: string;
+    gstNumber: string;
+};
+
+function getInitialState(initialValues?: Partial<ShopOwnerFormData>): ShopOwnerFormState {
+    return {
+        shopName: initialValues?.shopName ?? "",
+        ownerName: initialValues?.ownerName ?? "",
+        phone: initialValues?.phone ?? "",
+        email: initialValues?.email ?? "",
+        address: initialValues?.address ?? "",
+        city: initialValues?.city ?? "",
+        state: initialValues?.state ?? "",
+        country: initialValues?.country ?? "",
+        postalCode: initialValues?.postalCode ?? "",
+        shopSlug: initialValues?.shopSlug ?? "",
+        qrCodeUrl: initialValues?.qrCodeUrl ?? "",
+        language: initialValues?.language ?? "en",
+        businessName: initialValues?.businessName ?? "",
+        legalEntityName: initialValues?.legalEntityName ?? "",
+        gstNumber: initialValues?.gstNumber ?? "",
+    };
+}
+
 export default function ShopOwnerForm({
     isSubmitting = false,
     submitLabel = "Save Shop Owner",
     initialValues,
     onSubmit,
 }: Props) {
-    const [form, setForm] = useState<ShopOwnerFormData>({
-        shopName: initialValues?.shopName || "",
-        ownerName: initialValues?.ownerName || "",
-        phone: initialValues?.phone || "",
-        email: initialValues?.email || "",
-        address: initialValues?.address || "",
-        city: initialValues?.city || "",
-        state: initialValues?.state || "",
-        country: initialValues?.country || "",
-        postalCode: initialValues?.postalCode || "",
-        shopSlug: initialValues?.shopSlug || "",
-        qrCodeUrl: initialValues?.qrCodeUrl || "",
-        language: initialValues?.language || "en",
-        businessName: initialValues?.businessName || "",
-        legalEntityName: initialValues?.legalEntityName || "",
-        gstNumber: initialValues?.gstNumber || "",
-    });
+    const [form, setForm] = useState<ShopOwnerFormState>(getInitialState(initialValues));
 
-    const handleChange = (key: keyof ShopOwnerFormData, value: string) => {
+    function handleChange<K extends keyof ShopOwnerFormState>(
+        key: K,
+        value: ShopOwnerFormState[K]
+    ) {
         setForm((prev) => ({
             ...prev,
             [key]: value,
         }));
-    };
+    }
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    function buildPayload(): ShopOwnerFormData {
+        return {
+            shopName: requiredString(form.shopName),
+            ownerName: requiredString(form.ownerName),
+            phone: requiredString(form.phone),
+            shopSlug: requiredString(form.shopSlug),
+
+            email: cleanString(form.email),
+            address: cleanString(form.address),
+            city: cleanString(form.city),
+            state: cleanString(form.state),
+            country: cleanString(form.country),
+            postalCode: cleanString(form.postalCode),
+            qrCodeUrl: cleanString(form.qrCodeUrl),
+            language: cleanString(form.language),
+            businessName: cleanString(form.businessName),
+            legalEntityName: cleanString(form.legalEntityName),
+            gstNumber: cleanString(form.gstNumber),
+        };
+    }
+
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        await onSubmit(form);
-    };
+        await onSubmit(buildPayload());
+    }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">

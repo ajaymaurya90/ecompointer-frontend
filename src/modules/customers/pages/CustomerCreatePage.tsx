@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * ---------------------------------------------------------
+ * CUSTOMER CREATE PAGE
+ * ---------------------------------------------------------
+ * Purpose:
+ * Provides the page wrapper for creating a new Customer.
+ * It handles API submission, loading state, error display,
+ * and redirects back to the Customer list on success.
+ * ---------------------------------------------------------
+ */
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import CustomerForm from "@/modules/customers/components/CustomerForm";
@@ -11,12 +22,13 @@ export default function CustomerCreatePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Submit the new customer payload and redirect on success.
     async function handleSubmit(data: CustomerFormData) {
-        setIsSubmitting(true);
-        setError(null);
-
         try {
-            const created = await createCustomer(data);
+            setIsSubmitting(true);
+            setError(null);
+
+            await createCustomer(data);
             router.push("/dashboard/customers");
         } catch (err: any) {
             setError(err?.response?.data?.message || "Failed to create customer");
@@ -38,7 +50,7 @@ export default function CustomerCreatePage() {
 
             {error ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {error}
+                    {Array.isArray(error) ? error.join(", ") : error}
                 </div>
             ) : null}
 

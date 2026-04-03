@@ -1,9 +1,14 @@
 import { create } from "zustand";
-import { getShopOwners } from "@/modules/shop-owners/api/shopOwnerApi";
+import {
+    getShopOwnerById,
+    getShopOwners,
+    updateShopOwnerStatus,
+} from "@/modules/shop-owners/api/shopOwnerApi";
 import type {
     ShopOwner,
     ShopOwnerListParams,
     ShopOwnerListResponse,
+    ShopOwnerStatusPayload,
 } from "@/modules/shop-owners/types/shopOwner";
 
 type ShopOwnerFilters = {
@@ -15,13 +20,22 @@ type ShopOwnerFilters = {
 
 type ShopOwnerStore = {
     items: ShopOwner[];
+    currentItem: ShopOwner | null;
     pagination: ShopOwnerListResponse["pagination"];
     filters: ShopOwnerFilters;
     isLoading: boolean;
+    isDetailLoading: boolean;
+    isStatusUpdating: boolean;
     error: string | null;
     setFilters: (updates: Partial<ShopOwnerFilters>) => void;
     resetFilters: () => void;
     fetchShopOwners: () => Promise<void>;
+    fetchShopOwnerById: (shopOwnerId: string) => Promise<void>;
+    toggleShopOwnerStatus: (
+        shopOwnerId: string,
+        payload: ShopOwnerStatusPayload
+    ) => Promise<void>;
+    clearCurrentItem: () => void;
 };
 
 const defaultPagination = {
@@ -40,9 +54,12 @@ const defaultFilters: ShopOwnerFilters = {
 
 export const useShopOwnerStore = create<ShopOwnerStore>((set, get) => ({
     items: [],
+    currentItem: null,
     pagination: defaultPagination,
     filters: defaultFilters,
     isLoading: false,
+    isDetailLoading: false,
+    isStatusUpdating: false,
     error: null,
 
     setFilters: (updates) =>
@@ -56,6 +73,11 @@ export const useShopOwnerStore = create<ShopOwnerStore>((set, get) => ({
     resetFilters: () =>
         set({
             filters: defaultFilters,
+        }),
+
+    clearCurrentItem: () =>
+        set({
+            currentItem: null,
         }),
 
     fetchShopOwners: async () => {
@@ -85,6 +107,55 @@ export const useShopOwnerStore = create<ShopOwnerStore>((set, get) => ({
                     error?.response?.data?.message ||
                     error?.message ||
                     "Failed to load shop owners",
+            });
+        }
+    },
+
+    fetchShopOwnerById: async (shopOwnerId: string) => {
+        set({
+            isDetailLoading: true,
+            error: null,
+        });
+
+        try {
+            const response = await getShopOwnerById(shopOwnerId);
+
+            set({
+                currentItem: response,
+                isDetailLoading: false,
+            });
+        } catch (error: any) {
+            set({
+                isDetailLoading: false,
+                error:
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    "Failed to load shop owner details",
+            });
+        }
+    },
+
+    toggleShopOwnerStatus: async (shopOwnerId: string, payload: ShopOwnerStatusPayload) => {
+        set({
+            isStatusUpdating: true,
+            error: null,
+        });
+
+        try {
+            await updateShopOwnerStatus(shopOwnerId, payload);
+            await get().fetchShopOwnerById(shopOwnerId);
+            await get().fetchShopOwners();
+
+            set({
+                isStatusUpdating: false,
+            });
+        } catch (error: any) {
+            set({
+                isStatusUpdating: false,
+                error:
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    "Failed to update shop owner status",
             });
         }
     },

@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * ---------------------------------------------------------
+ * CUSTOMER EDIT PAGE
+ * ---------------------------------------------------------
+ * Purpose:
+ * Provides the page wrapper for editing an existing Customer.
+ * It loads the customer record, maps it into the shared form,
+ * handles update submission, and redirects to detail page on success.
+ * ---------------------------------------------------------
+ */
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import CustomerForm from "@/modules/customers/components/CustomerForm";
@@ -28,11 +39,12 @@ export default function CustomerEditPage({
     useEffect(() => {
         let isMounted = true;
 
+        // Load customer details when page opens or customer id changes.
         async function fetchCustomer() {
-            setIsLoading(true);
-            setError(null);
-
             try {
+                setIsLoading(true);
+                setError(null);
+
                 const data = await getCustomerById(customerId);
 
                 if (isMounted) {
@@ -49,18 +61,20 @@ export default function CustomerEditPage({
             }
         }
 
-        fetchCustomer();
+        void fetchCustomer();
 
+        // Prevent state update after component unmount.
         return () => {
             isMounted = false;
         };
     }, [customerId]);
 
+    // Submit updated customer data and redirect to detail page on success.
     async function handleSubmit(data: CustomerFormData) {
-        setIsSubmitting(true);
-        setError(null);
-
         try {
+            setIsSubmitting(true);
+            setError(null);
+
             await updateCustomer(customerId, data);
             router.push(`/dashboard/customers/${customerId}`);
         } catch (err: any) {
@@ -68,6 +82,22 @@ export default function CustomerEditPage({
         } finally {
             setIsSubmitting(false);
         }
+    }
+
+    // Build a stable initial-data shape for the shared form component.
+    function buildInitialData(customer: Customer): Partial<CustomerFormData> {
+        return {
+            type: customer.type,
+            status: customer.status,
+            source: customer.source,
+            firstName: customer.firstName,
+            lastName: customer.lastName || "",
+            email: customer.email || "",
+            phone: customer.phone || "",
+            alternatePhone: customer.alternatePhone || "",
+            dateOfBirth: customer.dateOfBirth || "",
+            notes: customer.notes || "",
+        };
     }
 
     return (
@@ -83,7 +113,7 @@ export default function CustomerEditPage({
 
             {error ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {error}
+                    {Array.isArray(error) ? error.join(", ") : error}
                 </div>
             ) : null}
 
@@ -99,18 +129,7 @@ export default function CustomerEditPage({
                 </div>
             ) : customer ? (
                 <CustomerForm
-                    initialData={{
-                        type: customer.type,
-                        status: customer.status,
-                        source: customer.source,
-                        firstName: customer.firstName,
-                        lastName: customer.lastName || "",
-                        email: customer.email || "",
-                        phone: customer.phone || "",
-                        alternatePhone: customer.alternatePhone || "",
-                        dateOfBirth: customer.dateOfBirth || "",
-                        notes: customer.notes || "",
-                    }}
+                    initialData={buildInitialData(customer)}
                     isSubmitting={isSubmitting}
                     submitLabel="Update Customer"
                     onSubmit={handleSubmit}

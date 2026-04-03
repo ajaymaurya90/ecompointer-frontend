@@ -1,6 +1,22 @@
 "use client";
 
+/**
+ * ---------------------------------------------------------
+ * CUSTOMER FORM
+ * ---------------------------------------------------------
+ * Purpose:
+ * Renders the create/edit customer form used for direct
+ * and business customer records.
+ *
+ * Form Pattern:
+ * 1. Keep UI-safe string/select values in local state
+ * 2. Normalize optional fields before submit
+ * 3. Submit a clean payload to parent page/API layer
+ * ---------------------------------------------------------
+ */
+
 import { useMemo, useState } from "react";
+import { cleanString, requiredString } from "@/lib/utils/formHelpers";
 import type {
     CustomerFormData,
     CustomerSource,
@@ -15,9 +31,39 @@ interface CustomerFormProps {
     onSubmit: (data: CustomerFormData) => Promise<void> | void;
 }
 
+type CustomerFormState = {
+    type: CustomerType;
+    status: CustomerStatus;
+    source: CustomerSource;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    alternatePhone: string;
+    dateOfBirth: string;
+    notes: string;
+};
+
+// Normalize ISO datetime into yyyy-mm-dd for date input usage.
 function normalizeDate(value?: string) {
     if (!value) return "";
     return value.includes("T") ? value.split("T")[0] : value;
+}
+
+// Build a stable UI form state from optional initial data.
+function getInitialState(initialData?: Partial<CustomerFormData>): CustomerFormState {
+    return {
+        type: initialData?.type || "INDIVIDUAL",
+        status: initialData?.status || "ACTIVE",
+        source: initialData?.source || "MANUAL",
+        firstName: initialData?.firstName || "",
+        lastName: initialData?.lastName || "",
+        email: initialData?.email || "",
+        phone: initialData?.phone || "",
+        alternatePhone: initialData?.alternatePhone || "",
+        dateOfBirth: normalizeDate(initialData?.dateOfBirth),
+        notes: initialData?.notes || "",
+    };
 }
 
 export default function CustomerForm({
@@ -26,27 +72,16 @@ export default function CustomerForm({
     submitLabel = "Save Customer",
     onSubmit,
 }: CustomerFormProps) {
-    const initialForm = useMemo<CustomerFormData>(
-        () => ({
-            type: initialData?.type || "INDIVIDUAL",
-            status: initialData?.status || "ACTIVE",
-            source: initialData?.source || "MANUAL",
-            firstName: initialData?.firstName || "",
-            lastName: initialData?.lastName || "",
-            email: initialData?.email || "",
-            phone: initialData?.phone || "",
-            alternatePhone: initialData?.alternatePhone || "",
-            dateOfBirth: normalizeDate(initialData?.dateOfBirth),
-            notes: initialData?.notes || "",
-        }),
-        [initialData]
-    );
+    // Memoize initial form data so edit-mode input mapping stays predictable.
+    const initialForm = useMemo(() => getInitialState(initialData), [initialData]);
 
-    const [form, setForm] = useState<CustomerFormData>(initialForm);
+    // Store raw UI values separately from API payload shape.
+    const [form, setForm] = useState<CustomerFormState>(initialForm);
 
-    function updateField<K extends keyof CustomerFormData>(
+    // Update a single customer form field in a typed way.
+    function updateField<K extends keyof CustomerFormState>(
         field: K,
-        value: CustomerFormData[K]
+        value: CustomerFormState[K]
     ) {
         setForm((prev) => ({
             ...prev,
@@ -54,9 +89,26 @@ export default function CustomerForm({
         }));
     }
 
+    // Build the final cleaned payload before submit.
+    function buildPayload(): CustomerFormData {
+        return {
+            type: form.type,
+            status: form.status,
+            source: form.source,
+            firstName: requiredString(form.firstName),
+            lastName: cleanString(form.lastName),
+            email: cleanString(form.email),
+            phone: cleanString(form.phone),
+            alternatePhone: cleanString(form.alternatePhone),
+            dateOfBirth: cleanString(form.dateOfBirth),
+            notes: cleanString(form.notes),
+        };
+    }
+
+    // Submit normalized data to parent page handler.
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        await onSubmit(form);
+        await onSubmit(buildPayload());
     }
 
     return (
@@ -93,7 +145,7 @@ export default function CustomerForm({
                     </label>
                     <input
                         type="text"
-                        value={form.lastName || ""}
+                        value={form.lastName}
                         onChange={(e) => updateField("lastName", e.target.value)}
                         className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:border-gray-500"
                     />
@@ -105,7 +157,7 @@ export default function CustomerForm({
                     </label>
                     <input
                         type="email"
-                        value={form.email || ""}
+                        value={form.email}
                         onChange={(e) => updateField("email", e.target.value)}
                         className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:border-gray-500"
                     />
@@ -117,7 +169,7 @@ export default function CustomerForm({
                     </label>
                     <input
                         type="text"
-                        value={form.phone || ""}
+                        value={form.phone}
                         onChange={(e) => updateField("phone", e.target.value)}
                         className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:border-gray-500"
                     />
@@ -129,7 +181,7 @@ export default function CustomerForm({
                     </label>
                     <input
                         type="text"
-                        value={form.alternatePhone || ""}
+                        value={form.alternatePhone}
                         onChange={(e) => updateField("alternatePhone", e.target.value)}
                         className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:border-gray-500"
                     />
@@ -141,7 +193,7 @@ export default function CustomerForm({
                     </label>
                     <input
                         type="date"
-                        value={form.dateOfBirth || ""}
+                        value={form.dateOfBirth}
                         onChange={(e) => updateField("dateOfBirth", e.target.value)}
                         className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm outline-none focus:border-gray-500"
                     />
@@ -152,7 +204,7 @@ export default function CustomerForm({
                         Type
                     </label>
                     <select
-                        value={form.type || "INDIVIDUAL"}
+                        value={form.type}
                         onChange={(e) =>
                             updateField("type", e.target.value as CustomerType)
                         }
@@ -169,7 +221,7 @@ export default function CustomerForm({
                         Status
                     </label>
                     <select
-                        value={form.status || "ACTIVE"}
+                        value={form.status}
                         onChange={(e) =>
                             updateField("status", e.target.value as CustomerStatus)
                         }
@@ -187,7 +239,7 @@ export default function CustomerForm({
                         Source
                     </label>
                     <select
-                        value={form.source || "MANUAL"}
+                        value={form.source}
                         onChange={(e) =>
                             updateField("source", e.target.value as CustomerSource)
                         }
@@ -209,7 +261,7 @@ export default function CustomerForm({
                     Notes
                 </label>
                 <textarea
-                    value={form.notes || ""}
+                    value={form.notes}
                     onChange={(e) => updateField("notes", e.target.value)}
                     rows={4}
                     className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-gray-500"

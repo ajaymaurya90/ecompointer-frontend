@@ -1,5 +1,23 @@
 "use client";
 
+/**
+ * ---------------------------------------------------------
+ * ORDER CREATE PAGE
+ * ---------------------------------------------------------
+ * Purpose:
+ * Handles the guided order creation flow for both direct
+ * customers and shop owners. It manages buyer selection,
+ * address selection, product cart, pricing totals, and
+ * final order submission.
+ *
+ * Page Pattern:
+ * 1. Keep buyer/cart UI state locally
+ * 2. Compute derived totals with memoized values
+ * 3. Validate business rules before create
+ * 4. Submit normalized order payload to backend
+ * ---------------------------------------------------------
+ */
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createOrder } from "@/modules/orders/api/order.api";
@@ -12,9 +30,12 @@ import OrderNotesCard from "@/modules/orders/components/OrderNotesCard";
 import OrderProductSearch from "@/modules/orders/components/OrderProductSearch";
 import OrderTotalsCard from "@/modules/orders/components/OrderTotalsCard";
 import OrderCreateSidebarSummary from "@/modules/orders/components/OrderCreateSidebarSummary";
+import PageErrorAlert from "@/components/common/PageErrorAlert";
+import { usePageError } from "@/lib/hooks/usePageError";
 import type {
     BuyerType,
     CreateOrderLineItem,
+    CreateOrderPayload,
     ShopOwnerSearchItem,
 } from "@/modules/orders/types/order";
 import type { Customer, CustomerAddress } from "@/modules/customers/types/customer";
@@ -35,108 +56,200 @@ export default function OrderCreatePage() {
     const [notes, setNotes] = useState("");
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+
+    // Manage normalized page-level error state through shared hook.
+    const { error, setError, clearError, captureError } = usePageError();
 
     const currencyCode = "INR";
 
+    // Keep only active customer addresses for selection UI.
     const customerAddresses = useMemo<CustomerAddress[]>(() => {
         return selectedCustomer?.addresses?.filter((address) => address.isActive) || [];
     }, [selectedCustomer]);
 
+    // Compute subtotal from all current cart lines.
     const subtotal = useMemo(() => {
         return items.reduce((sum, item) => sum + item.lineSubtotal, 0);
     }, [items]);
 
+    // Compute total tax from all current cart lines.
     const taxAmount = useMemo(() => {
         return items.reduce((sum, item) => sum + item.taxAmount, 0);
     }, [items]);
 
+    // Compute final payable total including shipping and discount.
     const grandTotal = useMemo(() => {
         return subtotal + taxAmount + Number(shippingAmount || 0) - Number(discountAmount || 0);
     }, [subtotal, taxAmount, shippingAmount, discountAmount]);
 
+    // Compute total ordered quantity across the cart.
     const totalQuantity = useMemo(() => {
         return items.reduce((sum, item) => sum + item.quantity, 0);
     }, [items]);
 
-    const resetBuyerDependentState = () => {
+    // Reset buyer-related state whenever buyer context changes.
+    function resetBuyerDependentState() {
         setSelectedCustomer(null);
         setSelectedShopOwner(null);
         setBillingAddressId("");
         setShippingAddressId("");
         setItems([]);
-    };
+    }
 
-    const handleBuyerTypeChange = (value: BuyerType) => {
+    // Extract default billing and shipping addresses from customer record.
+    function resolveDefaultAddresses(customer: Customer) {
+        const addresses = customer?.addresses?.filter((address) => address.isActive) || [];
+
+        const defaultBilling =
+            addresses.find(
+                (address) =>
+                    address.isDefault &&
+                    (address.type === "BILLING" || address.type === "BOTH")
+            ) ||
+            addresses.find(
+                (address) => address.type === "BILLING" || address.type === "BOTH"
+            );
+
+        const defaultShipping =
+            addresses.find(
+                (address) =>
+                    address.isDefault &&
+                    (address.type === "SHIPPING" || address.type === "BOTH")
+            ) ||
+            addresses.find(
+                (address) => address.type === "SHIPPING" || address.type === "BOTH"
+            );
+
+        return {
+            billingAddressId: defaultBilling?.id || "",
+            shippingAddressId: defaultShipping?.id || "",
+        };
+    }
+
+    // Validate all buyer-specific conditions before order submission.
+    function validateBeforeSubmit() {
+        if (buyerType === "CUSTOMER") {
+            if (!selectedCustomer) {
+                return "Please select a customer.";
+            }
+
+            if (!billingAddressId || !shippingAddressId) {
+                return "Please select billing and shipping addresses.";
+            }
+        }
+
+        if (buyerType === "SHOP_OWNER" && !selectedShopOwner) {
+            return "Please select a shop owner.";
+        }
+
+        if (!items.length) {
+            return "Please add at least one product.";
+        }
+
+        if (buyerType === "SHOP_OWNER" && items.length > 0) {
+            const rules = items[0].shopOrderRules || {
+                minLineQty: 3,
+                minCartQty: 10,
+                allowBelowMinLineQtyAfterCartMin: true,
+            };
+
+            if (totalQuantity < rules.minCartQty) {
+                return `For shop owner orders, total product quantity in cart must be at least ${rules.minCartQty}.`;
+            }
+
+            const shouldEnforceLineMin =
+                !rules.allowBelowMinLineQtyAfterCartMin || totalQuantity < rules.minCartQty;
+
+            if (shouldEnforceLineMin) {
+                const invalidLine = items.find(
+                    (item) => item.quantity < rules.minLineQty
+                );
+
+                if (invalidLine) {
+                    return `For shop owner orders, each line item quantity must be at least ${rules.minLineQty}.`;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // Build final API payload from current page state.
+    // Build final API payload from current page state.
+    function buildPayload(): CreateOrderPayload {
+        const resolvedBrandOwnerId = items[0]?.brandOwnerId;
+
+        if (!resolvedBrandOwnerId) {
+            throw new Error("Unable to resolve brand owner for selected items.");
+        }
+
+        return {
+            buyerType,
+            brandOwnerId: resolvedBrandOwnerId,
+            customerId: buyerType === "CUSTOMER" ? selectedCustomer?.id : undefined,
+            shopOwnerId: buyerType === "SHOP_OWNER" ? selectedShopOwner?.id : undefined,
+            salesChannel: buyerType === "SHOP_OWNER" ? "SHOP_ORDER" : "MANUAL",
+            billingAddressId: buyerType === "CUSTOMER" ? billingAddressId : undefined,
+            shippingAddressId: buyerType === "CUSTOMER" ? shippingAddressId : undefined,
+            shippingAmount,
+            discountAmount,
+            notes,
+            items: items.map((item) => ({
+                productVariantId: item.productVariantId,
+                quantity: item.quantity,
+            })),
+        };
+    }
+
+    // Switch buyer type and reset dependent order state.
+    function handleBuyerTypeChange(value: BuyerType) {
         setBuyerType(value);
         resetBuyerDependentState();
-        setError(null);
-    };
+        clearError();
+    }
 
-    const handleCustomerSelect = async (customer: Customer | null) => {
+    // Load full customer detail and preselect useful addresses.
+    async function handleCustomerSelect(customer: Customer | null) {
         if (!customer) {
             setSelectedCustomer(null);
             setBillingAddressId("");
             setShippingAddressId("");
             setItems([]);
-            setError(null);
+            clearError();
             return;
         }
 
         try {
-            setError(null);
+            clearError();
 
             const fullCustomer = await getCustomerById(customer.id);
+            const defaults = resolveDefaultAddresses(fullCustomer);
+
             setSelectedCustomer(fullCustomer);
             setSelectedShopOwner(null);
-
-            const addresses =
-                fullCustomer?.addresses?.filter((address) => address.isActive) || [];
-
-            const defaultBilling =
-                addresses.find(
-                    (address) =>
-                        address.isDefault &&
-                        (address.type === "BILLING" || address.type === "BOTH")
-                ) ||
-                addresses.find(
-                    (address) =>
-                        address.type === "BILLING" || address.type === "BOTH"
-                );
-
-            const defaultShipping =
-                addresses.find(
-                    (address) =>
-                        address.isDefault &&
-                        (address.type === "SHIPPING" || address.type === "BOTH")
-                ) ||
-                addresses.find(
-                    (address) =>
-                        address.type === "SHIPPING" || address.type === "BOTH"
-                );
-
-            setBillingAddressId(defaultBilling?.id || "");
-            setShippingAddressId(defaultShipping?.id || "");
+            setBillingAddressId(defaults.billingAddressId);
+            setShippingAddressId(defaults.shippingAddressId);
             setItems([]);
-        } catch (error: any) {
-            setError(
-                error?.response?.data?.message ||
-                error?.message ||
-                "Failed to load customer details"
-            );
+        } catch (err: any) {
+            captureError(err, "Failed to load customer details");
         }
-    };
+    }
 
-    const handleShopOwnerSelect = (shopOwner: ShopOwnerSearchItem | null) => {
+    // Set the active shop owner and reset customer-only state.
+    function handleShopOwnerSelect(shopOwner: ShopOwnerSearchItem | null) {
         setSelectedShopOwner(shopOwner);
         setSelectedCustomer(null);
         setBillingAddressId("");
         setShippingAddressId("");
         setItems([]);
-        setError(null);
-    };
+        clearError();
+    }
 
-    const recalculateLine = (item: CreateOrderLineItem, quantity: number): CreateOrderLineItem => {
+    // Recalculate line pricing after quantity change.
+    function recalculateLine(
+        item: CreateOrderLineItem,
+        quantity: number
+    ): CreateOrderLineItem {
         const dynamicMinQty =
             buyerType === "SHOP_OWNER"
                 ? item.shopOrderRules?.minLineQty ?? 3
@@ -154,9 +267,10 @@ export default function OrderCreatePage() {
             taxAmount,
             lineTotal,
         };
-    };
+    }
 
-    const handleAddItem = (newItem: CreateOrderLineItem) => {
+    // Add a new product line only if it is not already in the cart.
+    function handleAddItem(newItem: CreateOrderLineItem) {
         setItems((prev) => {
             const existing = prev.find(
                 (item) => item.productVariantId === newItem.productVariantId
@@ -168,9 +282,10 @@ export default function OrderCreatePage() {
 
             return [...prev, newItem];
         });
-    };
+    }
 
-    const handleQuantityChange = (productVariantId: string, quantity: number) => {
+    // Update quantity of a single line item.
+    function handleQuantityChange(productVariantId: string, quantity: number) {
         setItems((prev) =>
             prev.map((item) =>
                 item.productVariantId === productVariantId
@@ -178,106 +293,36 @@ export default function OrderCreatePage() {
                     : item
             )
         );
-    };
+    }
 
-    const handleRemoveItem = (productVariantId: string) => {
-        setItems((prev) => prev.filter((item) => item.productVariantId !== productVariantId));
-    };
+    // Remove one line item from the cart.
+    function handleRemoveItem(productVariantId: string) {
+        setItems((prev) =>
+            prev.filter((item) => item.productVariantId !== productVariantId)
+        );
+    }
 
-    const handleSubmit = async () => {
+    // Validate and submit the final order payload.
+    async function handleSubmit() {
         try {
-            setError(null);
+            clearError();
 
-            if (buyerType === "CUSTOMER") {
-                if (!selectedCustomer) {
-                    setError("Please select a customer.");
-                    return;
-                }
-
-                if (!billingAddressId || !shippingAddressId) {
-                    setError("Please select billing and shipping addresses.");
-                    return;
-                }
-            }
-
-            if (buyerType === "SHOP_OWNER" && !selectedShopOwner) {
-                setError("Please select a shop owner.");
-                return;
-            }
-
-            if (!items.length) {
-                setError("Please add at least one product.");
-                return;
-            }
-
-            if (buyerType === "SHOP_OWNER" && items.length > 0) {
-                const rules = items[0].shopOrderRules || {
-                    minLineQty: 3,
-                    minCartQty: 10,
-                    allowBelowMinLineQtyAfterCartMin: true,
-                };
-
-                if (totalQuantity < rules.minCartQty) {
-                    setError(
-                        `For shop owner orders, total product quantity in cart must be at least ${rules.minCartQty}.`
-                    );
-                    return;
-                }
-
-                const shouldEnforceLineMin =
-                    !rules.allowBelowMinLineQtyAfterCartMin || totalQuantity < rules.minCartQty;
-
-                if (shouldEnforceLineMin) {
-                    const invalidLine = items.find(
-                        (item) => item.quantity < rules.minLineQty
-                    );
-
-                    if (invalidLine) {
-                        setError(
-                            `For shop owner orders, each line item quantity must be at least ${rules.minLineQty}.`
-                        );
-                        return;
-                    }
-                }
-            }
-
-            const resolvedBrandOwnerId = items[0]?.brandOwnerId;
-
-            if (!resolvedBrandOwnerId) {
-                setError("Unable to resolve brand owner for selected items.");
+            const validationError = validateBeforeSubmit();
+            if (validationError) {
+                setError(validationError);
                 return;
             }
 
             setIsSubmitting(true);
 
-            const createdOrder = await createOrder({
-                buyerType,
-                brandOwnerId: resolvedBrandOwnerId,
-                customerId: buyerType === "CUSTOMER" ? selectedCustomer?.id : undefined,
-                shopOwnerId: buyerType === "SHOP_OWNER" ? selectedShopOwner?.id : undefined,
-                salesChannel: buyerType === "SHOP_OWNER" ? "SHOP_ORDER" : "MANUAL",
-                billingAddressId: buyerType === "CUSTOMER" ? billingAddressId : undefined,
-                shippingAddressId: buyerType === "CUSTOMER" ? shippingAddressId : undefined,
-                shippingAmount,
-                discountAmount,
-                notes,
-                items: items.map((item) => ({
-                    productVariantId: item.productVariantId,
-                    quantity: item.quantity,
-                })),
-            });
-
+            const createdOrder = await createOrder(buildPayload());
             router.push(`/dashboard/orders/${createdOrder.id}`);
-        } catch (error: any) {
-            setError(
-                error?.response?.data?.message ||
-                error?.message ||
-                "Failed to create order"
-            );
+        } catch (err: any) {
+            captureError(err, "Failed to create order");
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }
 
     return (
         <div className="space-y-6">
@@ -345,11 +390,7 @@ export default function OrderCreatePage() {
                 </div>
             </div>
 
-            {error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {Array.isArray(error) ? error.join(", ") : error}
-                </div>
-            ) : null}
+            <PageErrorAlert error={error} />
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
                 <div className="space-y-6 xl:col-span-8">

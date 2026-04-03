@@ -84,3 +84,12 @@ export interface LinkExistingShopOwnerFormData {
     shopSlug?: string;
     notes?: string;
 }
+
+export interface ShopOwnerDetailCardProps {
+    shopOwner: ShopOwner;
+}
+
+export interface ShopOwnerStatusPayload {
+    isActive: boolean;
+    notes?: string;
+}

@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * ---------------------------------------------------------
+ * SHOP OWNER CREATE PAGE
+ * ---------------------------------------------------------
+ * Purpose:
+ * Provides the page wrapper for creating a new Shop Owner.
+ * It handles API submission, loading state, error display,
+ * and redirects back to the Shop Owner list on success.
+ * ---------------------------------------------------------
+ */
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createShopOwner } from "@/modules/shop-owners/api/shopOwnerApi";
@@ -11,15 +22,21 @@ export default function ShopOwnerCreatePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    async function handleSubmit(data: ShopOwnerFormData) {
-        setIsSubmitting(true);
-        setError(null);
+    // Normalize and render error values coming from API responses.
+    function getErrorMessage(err: any) {
+        return err?.response?.data?.message || err?.message || "Failed to create shop owner";
+    }
 
+    // Submit the new shop owner payload and redirect on success.
+    async function handleSubmit(data: ShopOwnerFormData) {
         try {
+            setIsSubmitting(true);
+            setError(null);
+
             await createShopOwner(data);
             router.push("/dashboard/shop-owners");
         } catch (err: any) {
-            setError(err?.response?.data?.message || "Failed to create shop owner");
+            setError(getErrorMessage(err));
         } finally {
             setIsSubmitting(false);
         }
