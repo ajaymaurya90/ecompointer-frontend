@@ -160,3 +160,59 @@ export interface UpdateBrandOwnerShopOrderRulesPayload {
     minShopOrderCartQty: number;
     allowBelowMinLineQtyAfterCartMin: boolean;
 }
+
+export interface BrandOwnerStorefrontSettings {
+    id: string;
+    businessName: string | null;
+    storefrontName?: string | null;
+    storefrontLogoUrl?: string | null;
+    storefrontTagline?: string | null;
+    storefrontShortDescription?: string | null;
+    storefrontAboutDescription?: string | null;
+    storefrontSupportEmail?: string | null;
+    storefrontSupportPhone?: string | null;
+    isStorefrontEnabled: boolean;
+    isGuestCheckoutEnabled: boolean;
+    isCustomerRegistrationEnabled: boolean;
+    activeStorefrontThemeCode: string;
+    isStorefrontThemeActive: boolean;
+}
+
+export interface UpdateBrandOwnerStorefrontSettingsPayload {
+    storefrontName?: string;
+    storefrontLogoUrl?: string;
+    storefrontTagline?: string;
+    storefrontShortDescription?: string;
+    storefrontAboutDescription?: string;
+    storefrontSupportEmail?: string;
+    storefrontSupportPhone?: string;
+    isStorefrontEnabled?: boolean;
+    isGuestCheckoutEnabled?: boolean;
+    isCustomerRegistrationEnabled?: boolean;
+    activeStorefrontThemeCode?: string;
+    isStorefrontThemeActive?: boolean;
+}
+
+export interface BrandOwnerStorefrontDomain {
+    id: string;
+    brandOwnerId: string;
+    hostName: string;
+    isPrimary: boolean;
+    isActive: boolean;
+    isVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateBrandOwnerStorefrontDomainPayload {
+    hostName: string;
+    isPrimary?: boolean;
+    isActive?: boolean;
+}
+
+export interface UpdateBrandOwnerStorefrontDomainPayload {
+    hostName?: string;
+    isPrimary?: boolean;
+    isActive?: boolean;
+    isVerified?: boolean;
+}

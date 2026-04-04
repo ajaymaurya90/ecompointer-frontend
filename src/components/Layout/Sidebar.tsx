@@ -96,8 +96,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/products"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <Package size={16} />
@@ -107,8 +107,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/products/categories"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products/categories")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <FolderTree size={16} />
@@ -118,8 +118,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/products/brands"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/products/brands")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <Store size={16} />
@@ -151,8 +151,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/customers"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/customers")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <Users size={16} />
@@ -162,8 +162,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/customers/new"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/customers/new")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <UserPlus size={16} />
@@ -173,8 +173,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/customer-groups"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/customer-groups")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <Layers3 size={16} />
@@ -206,8 +206,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/shop-owners"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/shop-owners")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <Store size={16} />
@@ -217,8 +217,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/shop-owners/new"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/shop-owners/new")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <UserPlus size={16} />
@@ -228,8 +228,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/shop-owners/link-existing"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/shop-owners/link-existing")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <Link2 size={16} />
@@ -261,8 +261,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/orders"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/orders")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <ClipboardList size={16} />
@@ -272,8 +272,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/orders/new"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/orders/new")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <ShoppingCart size={16} />
@@ -283,8 +283,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/orders/payments"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/orders/payments")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <Receipt size={16} />
@@ -316,8 +316,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/settings/profile"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/settings/profile")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <User size={16} />
@@ -327,8 +327,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/settings/location"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/settings/location")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <MapPin size={16} />
@@ -338,8 +338,8 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/settings/language"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/settings/language")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <Globe size={16} />
@@ -349,12 +349,23 @@ const Sidebar = () => {
                                 <Link
                                     href="/dashboard/settings/service-area"
                                     className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/settings/service-area")
-                                            ? "active"
-                                            : "app-text-secondary"
+                                        ? "active"
+                                        : "app-text-secondary"
                                         }`}
                                 >
                                     <Globe size={16} />
                                     <span>Service Area</span>
+                                </Link>
+
+                                <Link
+                                    href="/dashboard/settings/storefront"
+                                    className={`submenu-item flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive("/dashboard/settings/storefront")
+                                        ? "active"
+                                        : "app-text-secondary"
+                                        }`}
+                                >
+                                    <Globe size={16} />
+                                    <span>Storefront</span>
                                 </Link>
                             </div>
                         )}

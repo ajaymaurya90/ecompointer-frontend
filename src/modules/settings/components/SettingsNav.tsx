@@ -1,33 +1,56 @@
 "use client";
 
+/**
+ * ---------------------------------------------------------
+ * SETTINGS NAV
+ * ---------------------------------------------------------
+ * Purpose:
+ * Shared navigation card for all settings pages.
+ * It shows the available settings sections and highlights
+ * the currently active one.
+ * ---------------------------------------------------------
+ */
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Globe, MapPin, Map, User } from "lucide-react";
+import {
+    User,
+    MapPin,
+    Globe,
+    Map,
+    Store,
+} from "lucide-react";
 
-const settingsItems = [
+const items = [
     {
-        label: "Profile",
         href: "/dashboard/settings/profile",
-        icon: User,
+        title: "Profile",
         description: "Manage your account and business profile",
+        icon: User,
     },
     {
-        label: "Location",
         href: "/dashboard/settings/location",
-        icon: MapPin,
+        title: "Location",
         description: "Set your primary business location",
+        icon: MapPin,
     },
     {
-        label: "Language",
         href: "/dashboard/settings/language",
-        icon: Globe,
+        title: "Language",
         description: "Choose your default language preferences",
+        icon: Globe,
     },
     {
-        label: "Service Area",
         href: "/dashboard/settings/service-area",
-        icon: Map,
+        title: "Service Area",
         description: "Control active states and districts for orders",
+        icon: Map,
+    },
+    {
+        href: "/dashboard/settings/storefront",
+        title: "Storefront",
+        description: "Manage storefront branding and customer-facing settings",
+        icon: Store,
     },
 ];
 
@@ -35,48 +58,43 @@ export default function SettingsNav() {
     const pathname = usePathname();
 
     return (
-        <div className="rounded-3xl border border-borderSoft bg-white p-4">
-            <div className="mb-4 px-2">
-                <h2 className="text-base font-semibold text-slate-900">Settings</h2>
-                <p className="mt-1 text-sm text-slate-500">
+        <div className="rounded-3xl border border-borderSoft bg-white p-7">
+            <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">Settings</h2>
+                <p className="mt-2 text-sm text-slate-500">
                     Manage your account and business preferences.
                 </p>
             </div>
 
-            <div className="space-y-2">
-                {settingsItems.map((item) => {
-                    const isActive = pathname === item.href;
+            <div className="space-y-3">
+                {items.map((item) => {
                     const Icon = item.icon;
+                    const isActive = pathname === item.href;
 
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`block rounded-2xl border px-4 py-3 transition ${isActive
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-transparent bg-transparent text-slate-700 hover:border-borderSoft hover:bg-slate-50"
+                            className={`flex items-start gap-4 rounded-2xl px-3 py-3 transition ${isActive
+                                    ? "bg-slate-100"
+                                    : "hover:bg-slate-50"
                                 }`}
                         >
-                            <div className="flex items-start gap-3">
-                                <div
-                                    className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl ${isActive
-                                        ? "bg-white/10 text-white"
-                                        : "bg-slate-100 text-slate-700"
-                                        }`}
-                                >
-                                    <Icon size={18} />
-                                </div>
+                            <div
+                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${isActive
+                                        ? "bg-white text-slate-900 shadow-sm"
+                                        : "bg-slate-100 text-slate-600"
+                                    }`}
+                            >
+                                <Icon size={20} />
+                            </div>
 
-                                <div className="min-w-0">
-                                    <div className="text-sm font-semibold">
-                                        {item.label}
-                                    </div>
-                                    <div
-                                        className={`mt-1 text-xs ${isActive ? "text-slate-200" : "text-slate-500"
-                                            }`}
-                                    >
-                                        {item.description}
-                                    </div>
+                            <div>
+                                <div className="text-lg font-semibold text-slate-900">
+                                    {item.title}
+                                </div>
+                                <div className="mt-1 text-sm leading-5 text-slate-500">
+                                    {item.description}
                                 </div>
                             </div>
                         </Link>

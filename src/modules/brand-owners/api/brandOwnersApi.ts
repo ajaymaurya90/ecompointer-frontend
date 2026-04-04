@@ -11,6 +11,11 @@ import type {
     UpdateServiceAreaStatePayload,
     BrandOwnerShopOrderRules,
     UpdateBrandOwnerShopOrderRulesPayload,
+    BrandOwnerStorefrontSettings,
+    UpdateBrandOwnerStorefrontSettingsPayload,
+    BrandOwnerStorefrontDomain,
+    CreateBrandOwnerStorefrontDomainPayload,
+    UpdateBrandOwnerStorefrontDomainPayload,
 } from "@/modules/brand-owners/types/brandOwner";
 import type {
     BrandOwnerLanguage,
@@ -122,5 +127,51 @@ export async function updateMyBrandOwnerShopOrderRules(
     data: UpdateBrandOwnerShopOrderRulesPayload
 ): Promise<BrandOwnerShopOrderRules> {
     const response = await api.patch("/brand-owners/me/shop-order-rules", data);
+    return response.data?.data ?? response.data;
+}
+
+export async function getMyBrandOwnerStorefrontSettings(): Promise<BrandOwnerStorefrontSettings> {
+    const response = await api.get("/brand-owners/me/storefront-settings");
+    return response.data?.data ?? response.data;
+}
+
+export async function updateMyBrandOwnerStorefrontSettings(
+    data: UpdateBrandOwnerStorefrontSettingsPayload
+): Promise<BrandOwnerStorefrontSettings> {
+    const response = await api.patch("/brand-owners/me/storefront-settings", data);
+    return response.data?.data ?? response.data;
+}
+
+export async function getMyBrandOwnerStorefrontDomains(): Promise<
+    BrandOwnerStorefrontDomain[]
+> {
+    const response = await api.get("/brand-owners/me/storefront-domains");
+    return response.data?.data ?? response.data ?? [];
+}
+
+export async function createMyBrandOwnerStorefrontDomain(
+    data: CreateBrandOwnerStorefrontDomainPayload
+): Promise<BrandOwnerStorefrontDomain> {
+    const response = await api.post("/brand-owners/me/storefront-domains", data);
+    return response.data?.data ?? response.data;
+}
+
+export async function updateMyBrandOwnerStorefrontDomain(
+    domainId: string,
+    data: UpdateBrandOwnerStorefrontDomainPayload
+): Promise<BrandOwnerStorefrontDomain> {
+    const response = await api.patch(
+        `/brand-owners/me/storefront-domains/${domainId}`,
+        data
+    );
+    return response.data?.data ?? response.data;
+}
+
+export async function deleteMyBrandOwnerStorefrontDomain(
+    domainId: string
+): Promise<{ message: string }> {
+    const response = await api.delete(
+        `/brand-owners/me/storefront-domains/${domainId}`
+    );
     return response.data?.data ?? response.data;
 }
