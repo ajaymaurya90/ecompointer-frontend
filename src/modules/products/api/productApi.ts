@@ -40,6 +40,11 @@ export async function getProductById(productId: string): Promise<Product> {
     return response.data?.data ?? response.data;
 }
 
+export async function getSuggestedProductCode(): Promise<{ code: string; prefix: string; sequence: number }> {
+    const response = await api.get("/products/suggest-code");
+    return response.data;
+}
+
 export async function createProduct(data: ProductFormData): Promise<Product> {
     const response = await api.post("/products", data);
     return response.data?.data ?? response.data;
@@ -68,25 +73,33 @@ export async function getProductBrands(): Promise<ProductOption[]> {
 
 export async function getProductCategories(): Promise<ProductOption[]> {
     const response = await api.get("/categories");
-    return flattenCategories(response.data || []);
+    return buildCategoryTree(response.data || []);
 }
 
-function flattenCategories(
-    categories: any[],
-    level = 0
-): ProductOption[] {
-    return categories.flatMap((category) => {
-        const prefix = level > 0 ? `${"— ".repeat(level)}` : "";
+// Convert flat category list into nested tree for Shopware-style selector.
+function buildCategoryTree(categories: any[]): ProductOption[] {
+    const normalized = categories.map((item) => ({
+        id: item.id,
+        name: item.name,
+        parentId: item.parentId ?? null,
+        children: [] as ProductOption[],
+    }));
 
-        const current: ProductOption = {
-            id: category.id,
-            name: `${prefix}${category.name}`,
-        };
+    const map = new Map<string, ProductOption>();
 
-        const children = Array.isArray(category.children)
-            ? flattenCategories(category.children, level + 1)
-            : [];
-
-        return [current, ...children];
+    normalized.forEach((item) => {
+        map.set(item.id, item);
     });
+
+    const roots: ProductOption[] = [];
+
+    normalized.forEach((item) => {
+        if (item.parentId && map.has(item.parentId)) {
+            map.get(item.parentId)!.children!.push(item);
+        } else {
+            roots.push(item);
+        }
+    });
+
+    return roots;
 }

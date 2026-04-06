@@ -19,6 +19,37 @@ interface CategoryFormState {
     description: string;
 }
 
+interface CategoryProduct {
+    id: string;
+    name: string;
+    productCode: string;
+    description?: string | null;
+    totalStock: number;
+    variantCount: number;
+    brand?: {
+        id: string;
+        name: string;
+    } | null;
+}
+
+interface AssignableProduct {
+    id: string;
+    name: string;
+    productCode: string;
+    brand?: {
+        id: string;
+        name: string;
+    } | null;
+    alreadyAssignedToThisCategory?: boolean;
+}
+
+interface MappedPagination {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+
 export default function CategoriesPageContainer() {
     const [categories, setCategories] = useState<CategoryNode[]>([]);
     const [loading, setLoading] = useState(false);
@@ -31,6 +62,24 @@ export default function CategoriesPageContainer() {
     });
 
     const [savingDetails, setSavingDetails] = useState(false);
+
+    const [categoryProducts, setCategoryProducts] = useState<CategoryProduct[]>([]);
+    const [productsLoading, setProductsLoading] = useState(false);
+
+    const [mappedPagination, setMappedPagination] = useState<MappedPagination>({
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+    });
+
+    const [assignableProducts, setAssignableProducts] = useState<AssignableProduct[]>([]);
+    const [assignableLoading, setAssignableLoading] = useState(false);
+    const [assigning, setAssigning] = useState(false);
+    const [productSearch, setProductSearch] = useState("");
+    const [selectedAssignableProductIds, setSelectedAssignableProductIds] = useState<string[]>(
+        []
+    );
 
     const [inlineCreate, setInlineCreate] = useState<InlineCreateState>({
         mode: null,
@@ -104,7 +153,13 @@ export default function CategoriesPageContainer() {
 
         try {
             const res = await api.get("/categories");
-            const tree = buildTree(res.data);
+
+            const normalized = (res.data || []).map((item: any) => ({
+                ...item,
+                productCount: item._count?.products ?? 0,
+            }));
+
+            const tree = buildTree(normalized);
             setCategories(tree);
 
             if (selectedCategory) {
@@ -128,9 +183,110 @@ export default function CategoriesPageContainer() {
         }
     };
 
+    const fetchCategoryProducts = async (
+        categoryId: string,
+        page = 1,
+        limit = 10
+    ) => {
+        setProductsLoading(true);
+
+        try {
+            const res = await api.get(`/categories/${categoryId}/products`, {
+                params: {
+                    page,
+                    limit,
+                },
+            });
+
+            setCategoryProducts(res.data?.data ?? []);
+            setMappedPagination(
+                res.data?.pagination ?? {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 1,
+                }
+            );
+        } catch (err) {
+            console.error(err);
+            setCategoryProducts([]);
+            setMappedPagination({
+                total: 0,
+                page,
+                limit,
+                totalPages: 1,
+            });
+        } finally {
+            setProductsLoading(false);
+        }
+    };
+
+    const fetchAssignableProducts = async (
+        categoryId: string,
+        search: string
+    ) => {
+        const trimmedSearch = search.trim();
+
+        // Do not show result list until user types something.
+        if (!trimmedSearch) {
+            setAssignableProducts([]);
+            setAssignableLoading(false);
+            return;
+        }
+
+        setAssignableLoading(true);
+
+        try {
+            const res = await api.get(`/categories/${categoryId}/product-options`, {
+                params: {
+                    search: trimmedSearch,
+                },
+            });
+
+            setAssignableProducts(res.data?.data ?? []);
+        } catch (err) {
+            console.error(err);
+            setAssignableProducts([]);
+        } finally {
+            setAssignableLoading(false);
+        }
+    };
+
     useEffect(() => {
-        fetchCategories();
+        void fetchCategories();
     }, []);
+
+    useEffect(() => {
+        if (!selectedCategory?.id) {
+            setCategoryProducts([]);
+            setAssignableProducts([]);
+            setSelectedAssignableProductIds([]);
+            setMappedPagination({
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+            });
+            return;
+        }
+
+        void fetchCategoryProducts(selectedCategory.id, 1, mappedPagination.limit);
+        setAssignableProducts([]);
+        setSelectedAssignableProductIds([]);
+    }, [selectedCategory?.id]);
+
+    useEffect(() => {
+        if (!selectedCategory?.id) {
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            setSelectedAssignableProductIds([]);
+            void fetchAssignableProducts(selectedCategory.id, productSearch);
+        }, 250);
+
+        return () => clearTimeout(timeout);
+    }, [productSearch, selectedCategory?.id]);
 
     const selectedParentName = useMemo(() => {
         if (!selectedCategory?.parentId) {
@@ -150,6 +306,13 @@ export default function CategoriesPageContainer() {
         });
 
         setSelectedCategory(category);
+        setProductSearch("");
+        setAssignableProducts([]);
+        setSelectedAssignableProductIds([]);
+        setMappedPagination((prev) => ({
+            ...prev,
+            page: 1,
+        }));
         setDetailsForm({
             name: category.name || "",
             description: category.description || "",
@@ -160,15 +323,13 @@ export default function CategoriesPageContainer() {
         mode: "before" | "after" | "child",
         target: CategoryNode
     ) => {
-        let parentId: string | null = null;
-
-        if (mode === "child") {
-            parentId = target.id;
-        } else {
-            parentId = target.parentId ?? null;
-        }
+        const parentId = mode === "child" ? target.id : target.parentId ?? null;
 
         setSelectedCategory(null);
+        setCategoryProducts([]);
+        setAssignableProducts([]);
+        setSelectedAssignableProductIds([]);
+        setProductSearch("");
 
         setInlineCreate({
             mode,
@@ -180,6 +341,10 @@ export default function CategoriesPageContainer() {
 
     const handleAddRootCategory = () => {
         setSelectedCategory(null);
+        setCategoryProducts([]);
+        setAssignableProducts([]);
+        setSelectedAssignableProductIds([]);
+        setProductSearch("");
         setInlineCreate({
             mode: "after",
             targetId: null,
@@ -269,6 +434,10 @@ export default function CategoriesPageContainer() {
 
             if (selectedCategory?.id === category.id) {
                 setSelectedCategory(null);
+                setCategoryProducts([]);
+                setAssignableProducts([]);
+                setSelectedAssignableProductIds([]);
+                setProductSearch("");
                 setDetailsForm({
                     name: "",
                     description: "",
@@ -276,9 +445,12 @@ export default function CategoriesPageContainer() {
             }
 
             await fetchCategories();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert("Cannot delete category if it has products or subcategories.");
+            alert(
+                err?.response?.data?.message ||
+                "Cannot delete category if it has products or subcategories."
+            );
         }
     };
 
@@ -310,6 +482,75 @@ export default function CategoriesPageContainer() {
         } finally {
             setSavingDetails(false);
         }
+    };
+
+    const handleToggleAssignableProduct = (productId: string) => {
+        setSelectedAssignableProductIds((prev) =>
+            prev.includes(productId)
+                ? prev.filter((id) => id !== productId)
+                : [...prev, productId]
+        );
+    };
+
+    const handleAssignSelectedProducts = async () => {
+        if (!selectedCategory?.id || selectedAssignableProductIds.length === 0) {
+            return;
+        }
+
+        setAssigning(true);
+
+        try {
+            const response = await api.post(
+                `/categories/${selectedCategory.id}/assign-products`,
+                {
+                    productIds: selectedAssignableProductIds,
+                }
+            );
+
+            await Promise.all([
+                fetchCategories(),
+                fetchCategoryProducts(
+                    selectedCategory.id,
+                    mappedPagination.page,
+                    mappedPagination.limit
+                ),
+                fetchAssignableProducts(selectedCategory.id, productSearch),
+            ]);
+
+            setSelectedAssignableProductIds([]);
+
+            alert(`${response.data?.assignedCount ?? 0} products assigned successfully.`);
+        } catch (err: any) {
+            console.error(err);
+            alert(
+                err?.response?.data?.message ||
+                "Failed to assign selected products to category"
+            );
+        } finally {
+            setAssigning(false);
+        }
+    };
+
+    const handleMappedPageChange = async (page: number) => {
+        if (!selectedCategory?.id) {
+            return;
+        }
+
+        const safePage = Math.max(page, 1);
+
+        await fetchCategoryProducts(
+            selectedCategory.id,
+            safePage,
+            mappedPagination.limit
+        );
+    };
+
+    const handleMappedLimitChange = async (limit: number) => {
+        if (!selectedCategory?.id) {
+            return;
+        }
+
+        await fetchCategoryProducts(selectedCategory.id, 1, limit);
     };
 
     const handleReorder = async (
@@ -350,7 +591,7 @@ export default function CategoriesPageContainer() {
                     Loading categories...
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_3fr]">
                     <div className="rounded-2xl border border-borderColorCustom bg-card p-4">
                         <CategoryTree
                             data={categories}
@@ -384,6 +625,19 @@ export default function CategoriesPageContainer() {
                         category={selectedCategory}
                         parentName={selectedParentName}
                         form={detailsForm}
+                        products={categoryProducts}
+                        productsLoading={productsLoading}
+                        mappedPagination={mappedPagination}
+                        assignableProducts={assignableProducts}
+                        assignableLoading={assignableLoading}
+                        productSearch={productSearch}
+                        selectedAssignableProductIds={selectedAssignableProductIds}
+                        assigning={assigning}
+                        onProductSearchChange={setProductSearch}
+                        onToggleAssignableProduct={handleToggleAssignableProduct}
+                        onAssignSelectedProducts={handleAssignSelectedProducts}
+                        onMappedPageChange={handleMappedPageChange}
+                        onMappedLimitChange={handleMappedLimitChange}
                         onFormChange={setDetailsForm}
                         onSave={handleSaveDetails}
                         onDelete={() => selectedCategory && handleDelete(selectedCategory)}

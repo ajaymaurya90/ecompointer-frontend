@@ -16,6 +16,7 @@ import {
     getProductBrands,
     getProductById,
     getProductCategories,
+    getSuggestedProductCode,
     updateProduct,
 } from "@/modules/products/api/productApi";
 
@@ -31,6 +32,7 @@ const emptyForm: ProductFormData = {
     productCode: "",
     brandId: "",
     categoryId: "",
+    categoryIds: [],
     description: "",
 };
 
@@ -62,15 +64,57 @@ export default function ProductFormPage({
                 if (mode === "edit" && productId) {
                     const product: Product = await getProductById(productId);
 
+                    const assignedCategoryIds =
+                        product?.categoryAssignments?.map(
+                            (item) => item.categoryId
+                        ) ||
+                        product?.categoryIds ||
+                        (product?.categoryId ? [product.categoryId] : []);
+
+                    const primaryCategoryId =
+                        product?.categoryId ??
+                        product?.category?.id ??
+                        assignedCategoryIds[0] ??
+                        "";
+
                     setForm({
                         name: product?.name ?? "",
                         productCode: product?.productCode ?? "",
                         brandId: product?.brandId ?? product?.brand?.id ?? "",
-                        categoryId: product?.categoryId ?? product?.category?.id ?? "",
+                        categoryId: primaryCategoryId,
+                        categoryIds: Array.from(
+                            new Set(
+                                primaryCategoryId
+                                    ? [primaryCategoryId, ...assignedCategoryIds]
+                                    : assignedCategoryIds
+                            )
+                        ),
                         description: product?.description ?? "",
                     });
 
                     setProductName(product?.name ?? "Edit Product");
+                    return;
+                }
+
+                // Auto-suggest code only in create mode.
+                if (mode === "create") {
+                    try {
+                        const suggested = await getSuggestedProductCode();
+
+                        setForm((prev) => {
+                            // Do not overwrite if user already typed something somehow.
+                            if (prev.productCode.trim()) {
+                                return prev;
+                            }
+
+                            return {
+                                ...prev,
+                                productCode: suggested.code,
+                            };
+                        });
+                    } catch (error) {
+                        console.error("Failed to fetch suggested product code:", error);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to load product form data:", error);
@@ -80,14 +124,41 @@ export default function ProductFormPage({
             }
         };
 
-        init();
+        void init();
     }, [mode, productId]);
 
-    const handleChange = (field: keyof ProductFormData, value: string) => {
-        setForm((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
+    const handleChange = (
+        field: keyof ProductFormData,
+        value: string | string[]
+    ) => {
+        setForm((prev) => {
+            const next = {
+                ...prev,
+                [field]: value,
+            } as ProductFormData;
+
+            // Always keep primary category inside assigned category list.
+            if (field === "categoryId") {
+                const primaryCategoryId = value as string;
+                next.categoryIds = primaryCategoryId
+                    ? Array.from(new Set([primaryCategoryId, ...prev.categoryIds]))
+                    : prev.categoryIds;
+            }
+
+            // If category list changes and primary is removed, choose first selected as new primary.
+            if (field === "categoryIds") {
+                const nextCategoryIds = value as string[];
+                next.categoryIds = nextCategoryIds;
+
+                if (!nextCategoryIds.length) {
+                    next.categoryId = "";
+                } else if (!nextCategoryIds.includes(prev.categoryId)) {
+                    next.categoryId = nextCategoryIds[0];
+                }
+            }
+
+            return next;
+        });
     };
 
     const handleCancel = () => {
@@ -111,25 +182,33 @@ export default function ProductFormPage({
         }
 
         if (!form.categoryId) {
-            alert("Please select a category");
+            alert("Please select a primary category");
             return;
         }
+
+        if (!form.categoryIds.length) {
+            alert("Please assign at least one category");
+            return;
+        }
+
+        const payload: ProductFormData = {
+            ...form,
+            categoryIds: Array.from(new Set([form.categoryId, ...form.categoryIds])),
+        };
 
         setSaving(true);
 
         try {
             if (mode === "create") {
-                await createProduct(form);
+                await createProduct(payload);
             } else if (productId) {
-                await updateProduct(productId, form);
+                await updateProduct(productId, payload);
             }
 
             router.push("/dashboard/products");
         } catch (error: any) {
             console.error(error);
-            alert(
-                error?.response?.data?.message || "Failed to save product"
-            );
+            alert(error?.response?.data?.message || "Failed to save product");
         } finally {
             setSaving(false);
         }
@@ -149,9 +228,7 @@ export default function ProductFormPage({
             router.push("/dashboard/products");
         } catch (error: any) {
             console.error(error);
-            alert(
-                error?.response?.data?.message || "Failed to delete product"
-            );
+            alert(error?.response?.data?.message || "Failed to delete product");
         }
     };
 
@@ -169,6 +246,7 @@ export default function ProductFormPage({
                     <div className="mt-6 flex items-center justify-end gap-3">
                         {mode === "edit" && (
                             <button
+                                type="button"
                                 onClick={handleDelete}
                                 className="rounded-lg border border-red-200 px-4 py-2 text-red-600 transition hover:bg-red-50"
                             >
@@ -177,6 +255,7 @@ export default function ProductFormPage({
                         )}
 
                         <button
+                            type="button"
                             onClick={handleCancel}
                             className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background"
                         >
@@ -184,6 +263,7 @@ export default function ProductFormPage({
                         </button>
 
                         <button
+                            type="button"
                             onClick={handleSave}
                             disabled={saving}
                             className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
@@ -231,9 +311,7 @@ export default function ProductFormPage({
 
         return (
             <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
-                <h4 className="text-lg font-semibold text-textPrimary">
-                    SEO
-                </h4>
+                <h4 className="text-lg font-semibold text-textPrimary">SEO</h4>
                 <p className="mt-2 text-textSecondary">
                     SEO settings will be added next.
                 </p>
@@ -263,6 +341,7 @@ export default function ProductFormPage({
 
                 <div className="flex items-center gap-3">
                     <button
+                        type="button"
                         onClick={handleCancel}
                         className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background"
                     >
@@ -271,6 +350,7 @@ export default function ProductFormPage({
 
                     {activeTab === "general" && (
                         <button
+                            type="button"
                             onClick={handleSave}
                             disabled={saving}
                             className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
@@ -285,40 +365,44 @@ export default function ProductFormPage({
                 <div className="border-b border-borderColorCustom px-6 pt-4">
                     <div className="flex gap-8">
                         <button
+                            type="button"
                             onClick={() => setActiveTab("general")}
                             className={`pb-3 text-sm ${activeTab === "general"
-                                ? "border-b-2 border-primary font-medium text-primary"
-                                : "text-textSecondary"
+                                    ? "border-b-2 border-primary font-medium text-primary"
+                                    : "text-textSecondary"
                                 }`}
                         >
                             General
                         </button>
 
                         <button
+                            type="button"
                             onClick={() => setActiveTab("variants")}
                             className={`pb-3 text-sm ${activeTab === "variants"
-                                ? "border-b-2 border-primary font-medium text-primary"
-                                : "text-textSecondary"
+                                    ? "border-b-2 border-primary font-medium text-primary"
+                                    : "text-textSecondary"
                                 }`}
                         >
                             Variants
                         </button>
 
                         <button
+                            type="button"
                             onClick={() => setActiveTab("media")}
                             className={`pb-3 text-sm ${activeTab === "media"
-                                ? "border-b-2 border-primary font-medium text-primary"
-                                : "text-textSecondary"
+                                    ? "border-b-2 border-primary font-medium text-primary"
+                                    : "text-textSecondary"
                                 }`}
                         >
                             Media
                         </button>
 
                         <button
+                            type="button"
                             onClick={() => setActiveTab("seo")}
                             className={`pb-3 text-sm ${activeTab === "seo"
-                                ? "border-b-2 border-primary font-medium text-primary"
-                                : "text-textSecondary"
+                                    ? "border-b-2 border-primary font-medium text-primary"
+                                    : "text-textSecondary"
                                 }`}
                         >
                             SEO
@@ -326,9 +410,7 @@ export default function ProductFormPage({
                     </div>
                 </div>
 
-                <div className="p-6">
-                    {renderTabContent()}
-                </div>
+                <div className="p-6">{renderTabContent()}</div>
             </div>
         </div>
     );

@@ -32,6 +32,7 @@ export interface CategoryNode {
     description?: string;
     position?: number;
     isActive?: boolean;
+    productCount?: number;
     children?: CategoryNode[];
 }
 
@@ -58,7 +59,7 @@ interface CategoryTreeProps {
     onInlineCreateCancel: () => void;
 }
 
-interface SortableCategoryNode extends CategoryNode {}
+interface SortableCategoryNode extends CategoryNode { }
 
 function InlineCreateRow({
     level = 0,
@@ -74,10 +75,7 @@ function InlineCreateRow({
     onCancel: () => void;
 }) {
     return (
-        <div
-            className="mb-2"
-            style={{ paddingLeft: level * 24 }}
-        >
+        <div className="mb-2" style={{ paddingLeft: level * 24 }}>
             <div className="rounded-lg border border-dashed border-borderColorCustom bg-background px-3 py-3">
                 <div className="flex items-center gap-2">
                     <input
@@ -86,18 +84,15 @@ function InlineCreateRow({
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                onSubmit();
-                            }
-                            if (e.key === "Escape") {
-                                onCancel();
-                            }
+                            if (e.key === "Enter") onSubmit();
+                            if (e.key === "Escape") onCancel();
                         }}
                         placeholder="Enter category name"
                         className="h-10 flex-1 rounded-lg border border-borderColorCustom bg-white px-3 outline-none focus:border-primary"
                     />
 
                     <button
+                        type="button"
                         onClick={onSubmit}
                         className="h-10 rounded-lg bg-blue-600 px-4 text-white transition hover:bg-blue-700"
                     >
@@ -105,6 +100,7 @@ function InlineCreateRow({
                     </button>
 
                     <button
+                        type="button"
                         onClick={onCancel}
                         className="h-10 rounded-lg border border-borderColorCustom px-4 transition hover:bg-card"
                     >
@@ -243,7 +239,7 @@ export default function CategoryTree({
 
         return (
             <div ref={setNodeRef} style={rowStyle}>
-                {showBeforeInput && (
+                {showBeforeInput ? (
                     <InlineCreateRow
                         level={level}
                         value={inlineCreate.name}
@@ -251,10 +247,10 @@ export default function CategoryTree({
                         onSubmit={onInlineCreateSubmit}
                         onCancel={onInlineCreateCancel}
                     />
-                )}
+                ) : null}
 
                 <div className="relative">
-                    {level > 0 && (
+                    {level > 0 ? (
                         <div
                             className="absolute left-0 top-0 border-l border-gray-200"
                             style={{
@@ -262,7 +258,7 @@ export default function CategoryTree({
                                 height: isLast ? "20px" : "100%",
                             }}
                         />
-                    )}
+                    ) : null}
 
                     <div
                         className="absolute border-t border-gray-200"
@@ -273,16 +269,10 @@ export default function CategoryTree({
                         }}
                     />
 
-                    <div
-                        style={{ paddingLeft: level * 24 }}
-                        className="relative"
-                    >
+                    <div style={{ paddingLeft: level * 24 }} className="relative">
                         <div
-                            className={`group flex min-h-[40px] items-center justify-between rounded-md px-2 py-1 transition ${
-                                isSelected
-                                    ? "bg-blue-50 text-primary"
-                                    : "hover:bg-background"
-                            }`}
+                            className={`group flex min-h-[40px] items-center justify-between rounded-md px-2 py-1 transition ${isSelected ? "bg-blue-50 text-primary" : "hover:bg-background"
+                                }`}
                             onClick={() => onSelect?.(category)}
                         >
                             <div className="flex min-w-0 items-center gap-2">
@@ -315,16 +305,13 @@ export default function CategoryTree({
                                 </button>
 
                                 <span
-                                    className={`h-2.5 w-2.5 rounded-full ${
-                                        category.isActive === false ? "bg-gray-400" : "bg-green-500"
-                                    }`}
+                                    className={`h-2.5 w-2.5 rounded-full ${category.isActive === false ? "bg-gray-400" : "bg-green-500"
+                                        }`}
                                 />
 
                                 <Folder
                                     size={16}
-                                    className={`${
-                                        isSelected ? "text-primary" : "text-gray-400"
-                                    }`}
+                                    className={isSelected ? "text-primary" : "text-gray-400"}
                                 />
 
                                 <span className="truncate text-[15px] font-medium text-textPrimary">
@@ -332,98 +319,105 @@ export default function CategoryTree({
                                 </span>
                             </div>
 
-                            <div
-                                className="relative"
-                                ref={menuRef}
-                            >
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setMenuOpen((prev) => !prev);
-                                    }}
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                    className={`rounded-md p-1.5 transition ${
-                                        menuOpen
-                                            ? "bg-blue-50 text-primary"
-                                            : "text-textSecondary opacity-70 hover:bg-background hover:opacity-100"
-                                    }`}
-                                >
-                                    <MoreHorizontal size={16} />
-                                </button>
+                            <div className="flex items-center gap-2">
+                                <span className="rounded-full bg-background px-2 py-0.5 text-xs font-medium text-textSecondary">
+                                    {category.productCount ?? 0}
+                                </span>
 
-                                {menuOpen && (
-                                    <div className="absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-borderColorCustom bg-white p-2 shadow-lg">
-                                        <button
-                                            className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-background"
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setMenuOpen(false);
-                                                onAddBefore?.(category);
-                                            }}
-                                        >
-                                            Create before
-                                        </button>
+                                <div className="relative" ref={menuRef}>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setMenuOpen((prev) => !prev);
+                                        }}
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        className={`rounded-md p-1.5 transition ${menuOpen
+                                                ? "bg-blue-50 text-primary"
+                                                : "text-textSecondary opacity-70 hover:bg-background hover:opacity-100"
+                                            }`}
+                                    >
+                                        <MoreHorizontal size={16} />
+                                    </button>
 
-                                        <button
-                                            className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-background"
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setMenuOpen(false);
-                                                onAddAfter?.(category);
-                                            }}
-                                        >
-                                            Create after
-                                        </button>
+                                    {menuOpen ? (
+                                        <div className="absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-borderColorCustom bg-white p-2 shadow-lg">
+                                            <button
+                                                type="button"
+                                                className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-background"
+                                                onPointerDown={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setMenuOpen(false);
+                                                    onAddBefore?.(category);
+                                                }}
+                                            >
+                                                Create before
+                                            </button>
 
-                                        <button
-                                            className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-background"
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setMenuOpen(false);
-                                                onAdd?.(category);
-                                                setExpanded(true);
-                                            }}
-                                        >
-                                            Add subcategory
-                                        </button>
+                                            <button
+                                                type="button"
+                                                className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-background"
+                                                onPointerDown={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setMenuOpen(false);
+                                                    onAddAfter?.(category);
+                                                }}
+                                            >
+                                                Create after
+                                            </button>
 
-                                        <button
-                                            className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-background"
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setMenuOpen(false);
-                                                onEdit?.(category);
-                                            }}
-                                        >
-                                            Edit
-                                        </button>
+                                            <button
+                                                type="button"
+                                                className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-background"
+                                                onPointerDown={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setMenuOpen(false);
+                                                    onAdd?.(category);
+                                                    setExpanded(true);
+                                                }}
+                                            >
+                                                Add subcategory
+                                            </button>
 
-                                        <button
-                                            className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setMenuOpen(false);
-                                                onDelete?.(category);
-                                            }}
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                )}
+                                            <button
+                                                type="button"
+                                                className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-background"
+                                                onPointerDown={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setMenuOpen(false);
+                                                    onEdit?.(category);
+                                                }}
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                                onPointerDown={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setMenuOpen(false);
+                                                    onDelete?.(category);
+                                                }}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    ) : null}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {expanded && (
+                {expanded ? (
                     <div>
-                        {showChildInput && (
+                        {showChildInput ? (
                             <InlineCreateRow
                                 level={level + 1}
                                 value={inlineCreate.name}
@@ -431,9 +425,9 @@ export default function CategoryTree({
                                 onSubmit={onInlineCreateSubmit}
                                 onCancel={onInlineCreateCancel}
                             />
-                        )}
+                        ) : null}
 
-                        {hasChildren && (
+                        {hasChildren ? (
                             <SortableContext
                                 items={category.children || []}
                                 strategy={verticalListSortingStrategy}
@@ -449,11 +443,11 @@ export default function CategoryTree({
                                     ))}
                                 </div>
                             </SortableContext>
-                        )}
+                        ) : null}
                     </div>
-                )}
+                ) : null}
 
-                {showAfterInput && (
+                {showAfterInput ? (
                     <InlineCreateRow
                         level={level}
                         value={inlineCreate.name}
@@ -461,7 +455,7 @@ export default function CategoryTree({
                         onSubmit={onInlineCreateSubmit}
                         onCancel={onInlineCreateCancel}
                     />
-                )}
+                ) : null}
             </div>
         );
     };
@@ -491,18 +485,15 @@ export default function CategoryTree({
                     onCancel={onInlineCreateCancel}
                 />
             ) : (
-                <SortableContext
-                    items={treeData}
-                    strategy={verticalListSortingStrategy}
-                >
-                    {inlineCreate.mode === "after" && inlineCreate.targetId === null && (
+                <SortableContext items={treeData} strategy={verticalListSortingStrategy}>
+                    {inlineCreate.mode === "after" && inlineCreate.targetId === null ? (
                         <InlineCreateRow
                             value={inlineCreate.name}
                             onChange={onInlineCreateNameChange}
                             onSubmit={onInlineCreateSubmit}
                             onCancel={onInlineCreateCancel}
                         />
-                    )}
+                    ) : null}
 
                     <div className="space-y-1">
                         {treeData.map((category, index) => (

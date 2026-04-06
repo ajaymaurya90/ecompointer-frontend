@@ -20,18 +20,23 @@ export interface ProductBrand {
 export interface ProductCategory {
     id: string;
     name: string;
+    parentId?: string | null;
+    children?: ProductCategory[];
 }
 
 export interface ProductOption {
     id: string;
     name: string;
+    parentId?: string | null;
+    children?: ProductOption[];
 }
 
 export interface ProductFormData {
     name: string;
     productCode: string;
     brandId: string;
-    categoryId: string;
+    categoryId: string;      // primary category
+    categoryIds: string[];   // all assigned categories
     description: string;
 }
 
@@ -42,11 +47,17 @@ export interface Product {
     description?: string;
     brandId?: string;
     categoryId?: string;
+    categoryIds?: string[];
     brand?: ProductBrand;
     category?: ProductCategory;
+    categoryAssignments?: Array<{
+        categoryId: string;
+        category: ProductCategory;
+    }>;
     media: ProductMedia[];
     variants: ProductVariant[];
     totalStock?: number;
+    variantCount?: number;
     isActive?: boolean;
     createdAt?: string;
 }

@@ -35,8 +35,8 @@ export default function ProductsPageContainer() {
     const [categories, setCategories] = useState<ProductOption[]>([]);
 
     useEffect(() => {
-        fetchProducts();
-        loadCategories();
+        void fetchProducts();
+        void loadCategories();
     }, [fetchProducts]);
 
     const loadCategories = async () => {
@@ -103,6 +103,7 @@ export default function ProductsPageContainer() {
                 </div>
 
                 <button
+                    type="button"
                     onClick={handleAddProduct}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                 >
@@ -180,7 +181,6 @@ export default function ProductsPageContainer() {
 
                         <button
                             type="submit"
-                            onClick={() => void applySearch()}
                             className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                         >
                             Search
@@ -189,11 +189,11 @@ export default function ProductsPageContainer() {
                 </div>
             </div>
 
-            {error && (
+            {error ? (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-600">
                     {error}
                 </div>
-            )}
+            ) : null}
 
             <ProductListTable
                 products={products}
@@ -209,6 +209,7 @@ export default function ProductsPageContainer() {
 
                 <div className="flex items-center gap-2">
                     <button
+                        type="button"
                         onClick={() => void setPage(page - 1)}
                         disabled={page <= 1}
                         className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
@@ -221,6 +222,7 @@ export default function ProductsPageContainer() {
                     </div>
 
                     <button
+                        type="button"
                         onClick={() => void setPage(page + 1)}
                         disabled={page >= lastPage}
                         className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
