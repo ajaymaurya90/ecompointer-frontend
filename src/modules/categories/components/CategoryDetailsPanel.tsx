@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MoreHorizontal } from "lucide-react";
 import type { CategoryNode } from "@/modules/categories/components/CategoryTree";
 import RichTextEditor from "@/components/ui/RichTextEditor";
+import FieldTooltip from "@/components/ui/FieldTooltip";
 
 type CategoryProduct = {
     id: string;
@@ -11,6 +13,7 @@ type CategoryProduct = {
     description?: string | null;
     totalStock: number;
     variantCount: number;
+    isPrimaryCategory?: boolean;
     brand?: {
         id: string;
         name: string;
@@ -50,15 +53,97 @@ interface CategoryDetailsPanelProps {
     productSearch: string;
     selectedAssignableProductIds: string[];
     assigning: boolean;
+    isBrowseOpen: boolean;
+    removingAssignmentProductId: string | null;
+    onBrowseFocus: () => void;
     onProductSearchChange: (value: string) => void;
     onToggleAssignableProduct: (productId: string) => void;
     onAssignSelectedProducts: () => void;
     onMappedPageChange: (page: number) => void;
     onMappedLimitChange: (limit: number) => void;
+    onRemoveAssignment: (productId: string) => void;
+    onViewProduct: (productId: string) => void;
     onFormChange: (form: { name: string; description: string }) => void;
     onSave: () => void;
     onDelete: () => void;
     saving?: boolean;
+}
+
+function MappedProductRowActions({
+    productId,
+    isPrimaryCategory,
+    onRemoveAssignment,
+    onViewProduct,
+    isRemoving,
+}: {
+    productId: string;
+    isPrimaryCategory?: boolean;
+    onRemoveAssignment: (productId: string) => void;
+    onViewProduct: (productId: string) => void;
+    isRemoving: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleOutside = (event: MouseEvent) => {
+            if (
+                open &&
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node)
+            ) {
+                setOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleOutside);
+        return () => document.removeEventListener("mousedown", handleOutside);
+    }, [open]);
+
+    return (
+        <div className="relative" ref={menuRef}>
+            <button
+                type="button"
+                onClick={() => setOpen((prev) => !prev)}
+                className="rounded-md p-2 text-textSecondary transition hover:bg-background hover:text-textPrimary"
+            >
+                <MoreHorizontal size={16} />
+            </button>
+
+            {open ? (
+                <div className="absolute bottom-full right-0 z-30 mb-2 w-44 rounded-xl border border-borderColorCustom bg-white p-2 shadow-lg">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOpen(false);
+                            onViewProduct(productId);
+                        }}
+                        className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-background"
+                    >
+                        View product
+                    </button>
+
+                    {isPrimaryCategory ? (
+                        <div className="block w-full cursor-not-allowed rounded-lg px-3 py-2 text-left text-sm text-textSecondary opacity-60">
+                            Primary category
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOpen(false);
+                                onRemoveAssignment(productId);
+                            }}
+                            disabled={isRemoving}
+                            className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                        >
+                            {isRemoving ? "Removing..." : "Delete assignment"}
+                        </button>
+                    )}
+                </div>
+            ) : null}
+        </div>
+    );
 }
 
 export default function CategoryDetailsPanel({
@@ -73,11 +158,16 @@ export default function CategoryDetailsPanel({
     productSearch,
     selectedAssignableProductIds,
     assigning,
+    isBrowseOpen,
+    removingAssignmentProductId,
+    onBrowseFocus,
     onProductSearchChange,
     onToggleAssignableProduct,
     onAssignSelectedProducts,
     onMappedPageChange,
     onMappedLimitChange,
+    onRemoveAssignment,
+    onViewProduct,
     onFormChange,
     onSave,
     onDelete,
@@ -126,8 +216,8 @@ export default function CategoryDetailsPanel({
                     <button
                         onClick={() => setActiveTab("general")}
                         className={`pb-3 text-sm ${activeTab === "general"
-                                ? "border-b-2 border-primary font-medium text-primary"
-                                : "text-textSecondary"
+                            ? "border-b-2 border-primary font-medium text-primary"
+                            : "text-textSecondary"
                             }`}
                     >
                         General
@@ -136,8 +226,8 @@ export default function CategoryDetailsPanel({
                     <button
                         onClick={() => setActiveTab("products")}
                         className={`pb-3 text-sm ${activeTab === "products"
-                                ? "border-b-2 border-primary font-medium text-primary"
-                                : "text-textSecondary"
+                            ? "border-b-2 border-primary font-medium text-primary"
+                            : "text-textSecondary"
                             }`}
                     >
                         Products
@@ -146,8 +236,8 @@ export default function CategoryDetailsPanel({
                     <button
                         onClick={() => setActiveTab("layout")}
                         className={`pb-3 text-sm ${activeTab === "layout"
-                                ? "border-b-2 border-primary font-medium text-primary"
-                                : "text-textSecondary"
+                            ? "border-b-2 border-primary font-medium text-primary"
+                            : "text-textSecondary"
                             }`}
                     >
                         Layout
@@ -156,8 +246,8 @@ export default function CategoryDetailsPanel({
                     <button
                         onClick={() => setActiveTab("seo")}
                         className={`pb-3 text-sm ${activeTab === "seo"
-                                ? "border-b-2 border-primary font-medium text-primary"
-                                : "text-textSecondary"
+                            ? "border-b-2 border-primary font-medium text-primary"
+                            : "text-textSecondary"
                             }`}
                     >
                         SEO
@@ -272,13 +362,18 @@ export default function CategoryDetailsPanel({
                                 </div>
 
                                 <div>
-                                    <label className="mb-2 block text-sm font-medium text-textPrimary">
-                                        Products
-                                    </label>
+                                    <div className="mb-2 flex items-center justify-between gap-3">
+                                        <label className="block text-sm font-medium text-textPrimary">
+                                            Products
+                                        </label>
+
+                                        <FieldTooltip text="Click in the browse field to open available products. Start typing to filter the result list. Already assigned products are excluded automatically." />
+                                    </div>
 
                                     <input
                                         type="text"
                                         value={productSearch}
+                                        onFocus={onBrowseFocus}
                                         onChange={(e) => onProductSearchChange(e.target.value)}
                                         placeholder="Browse and assign products..."
                                         className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
@@ -291,11 +386,7 @@ export default function CategoryDetailsPanel({
                                         </div>
                                     ) : null}
 
-                                    {!hasTypedSearch ? (
-                                        <div className="mt-3 rounded-xl border border-dashed border-borderColorCustom bg-background p-4 text-sm text-textSecondary">
-                                            Start typing in the browse box to search products for assignment.
-                                        </div>
-                                    ) : (
+                                    {isBrowseOpen ? (
                                         <div className="mt-3 rounded-xl border border-borderColorCustom">
                                             {assignableLoading ? (
                                                 <div className="p-4 text-sm text-textSecondary">
@@ -303,7 +394,9 @@ export default function CategoryDetailsPanel({
                                                 </div>
                                             ) : assignableProducts.length === 0 ? (
                                                 <div className="p-4 text-sm text-textSecondary">
-                                                    No matching products found.
+                                                    {hasTypedSearch
+                                                        ? "No matching products found."
+                                                        : "No assignable products available."}
                                                 </div>
                                             ) : (
                                                 <div className="divide-y divide-borderColorCustom">
@@ -342,16 +435,12 @@ export default function CategoryDetailsPanel({
                                                 </div>
                                             )}
                                         </div>
-                                    )}
+                                    ) : null}
 
                                     <div className="mt-4 flex justify-end">
                                         <button
                                             onClick={onAssignSelectedProducts}
-                                            disabled={
-                                                !hasTypedSearch ||
-                                                selectedCount === 0 ||
-                                                assigning
-                                            }
+                                            disabled={selectedCount === 0 || assigning}
                                             className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700 disabled:opacity-60"
                                         >
                                             {assigning
@@ -392,21 +481,30 @@ export default function CategoryDetailsPanel({
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="overflow-hidden rounded-xl border border-borderColorCustom">
-                                            <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-4 border-b border-borderColorCustom bg-background px-4 py-3 text-sm font-medium text-textSecondary">
+                                        <div className="rounded-xl border border-borderColorCustom">
+                                            <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_60px] gap-4 border-b border-borderColorCustom bg-background px-4 py-3 text-sm font-medium text-textSecondary">
                                                 <div>Product</div>
                                                 <div>Brand</div>
+                                                <div className="text-right">Actions</div>
                                             </div>
 
                                             <div className="divide-y divide-borderColorCustom">
                                                 {products.map((product) => (
                                                     <div
                                                         key={product.id}
-                                                        className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-4 px-4 py-4 text-sm"
+                                                        className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_60px] gap-4 px-4 py-4 text-sm"
                                                     >
                                                         <div className="min-w-0">
-                                                            <div className="truncate font-medium text-textPrimary">
-                                                                {product.name}
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="truncate font-medium text-textPrimary">
+                                                                    {product.name}
+                                                                </div>
+
+                                                                {product.isPrimaryCategory ? (
+                                                                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-primary">
+                                                                        Primary
+                                                                    </span>
+                                                                ) : null}
                                                             </div>
                                                             <div className="mt-1 truncate text-textSecondary">
                                                                 {product.productCode}
@@ -415,6 +513,18 @@ export default function CategoryDetailsPanel({
 
                                                         <div className="truncate text-textSecondary">
                                                             {product.brand?.name || "No brand"}
+                                                        </div>
+
+                                                        <div className="flex justify-end">
+                                                            <MappedProductRowActions
+                                                                productId={product.id}
+                                                                isPrimaryCategory={product.isPrimaryCategory}
+                                                                onRemoveAssignment={onRemoveAssignment}
+                                                                onViewProduct={onViewProduct}
+                                                                isRemoving={
+                                                                    removingAssignmentProductId === product.id
+                                                                }
+                                                            />
                                                         </div>
                                                     </div>
                                                 ))}
