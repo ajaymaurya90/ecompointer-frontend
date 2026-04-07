@@ -1,4 +1,5 @@
 import { api } from "@/lib/http";
+import type { ProductMediaItem } from "@/modules/products/types/product";
 
 export interface ProductVariant {
     id: string;
@@ -37,6 +38,17 @@ export interface ProductVariantFormData {
     retailNet: number;
     stock: number;
     isActive?: boolean;
+}
+
+export interface VariantMediaListResponse {
+    source: "variant" | "product-fallback";
+    data: ProductMediaItem[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
 }
 
 export async function getProductVariants(
@@ -78,4 +90,54 @@ export async function deleteProductVariant(
     variantId: string
 ): Promise<void> {
     await api.delete(`/products/${productId}/variants/${variantId}`);
+}
+
+/* =====================================================
+   VARIANT MEDIA
+   ===================================================== */
+
+export async function getVariantMedia(
+    variantId: string,
+    page = 1,
+    limit = 100
+): Promise<VariantMediaListResponse> {
+    const response = await api.get(`/media/variant/${variantId}`, {
+        params: { page, limit },
+    });
+
+    return response.data;
+}
+
+export async function uploadVariantMedia(
+    variantId: string,
+    file: File
+) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post(`/media/upload/variant/${variantId}`, formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+
+    return response.data;
+}
+
+export async function updateVariantMediaLink(
+    linkId: string,
+    payload: {
+        isPrimary?: boolean;
+        role?: "GALLERY" | "THUMBNAIL" | "ZOOM" | "SWATCH" | "LIFESTYLE";
+        title?: string;
+        altText?: string;
+    }
+) {
+    const response = await api.patch(`/media/product-link/${linkId}`, payload);
+    return response.data;
+}
+
+export async function deleteVariantMediaLink(linkId: string) {
+    const response = await api.delete(`/media/product-link/${linkId}`);
+    return response.data;
 }

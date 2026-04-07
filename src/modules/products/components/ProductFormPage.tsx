@@ -5,11 +5,17 @@ import { useRouter } from "next/navigation";
 import ProductForm from "@/modules/products/components/ProductForm";
 import ProductVariantsTab from "@/modules/products/components/ProductVariantsTab";
 import ProductMediaTab from "@/modules/products/components/ProductMediaTab";
+import ProductVariantForm from "@/modules/products/components/ProductVariantForm";
+import VariantMediaTab from "@/modules/products/components/VariantMediaTab";
 import type {
     Product,
     ProductFormData,
     ProductOption,
 } from "@/modules/products/types/product";
+import type {
+    ProductVariant,
+    ProductVariantFormData,
+} from "@/modules/products/api/productVariantApi";
 import {
     createProduct,
     deleteProduct,
@@ -19,13 +25,18 @@ import {
     getSuggestedProductCode,
     updateProduct,
 } from "@/modules/products/api/productApi";
+import {
+    createProductVariant,
+    updateProductVariant,
+} from "@/modules/products/api/productVariantApi";
 
 interface ProductFormPageProps {
     mode: "create" | "edit";
     productId?: string;
 }
 
-type ProductTab = "general" | "variants" | "media" | "seo";
+type ProductTab = "general" | "variants" | "seo";
+type VariantEditorMode = "create" | "edit" | null;
 
 const emptyForm: ProductFormData = {
     name: "",
@@ -34,6 +45,10 @@ const emptyForm: ProductFormData = {
     categoryId: "",
     categoryIds: [],
     description: "",
+    taxRate: 18,
+    costPrice: 0,
+    wholesaleNet: 0,
+    retailNet: 0,
 };
 
 export default function ProductFormPage({
@@ -49,6 +64,12 @@ export default function ProductFormPage({
     const [brands, setBrands] = useState<ProductOption[]>([]);
     const [categories, setCategories] = useState<ProductOption[]>([]);
     const [productName, setProductName] = useState("Create Product");
+
+    const [variantEditorMode, setVariantEditorMode] =
+        useState<VariantEditorMode>(null);
+    const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
+    const [variantSubmitting, setVariantSubmitting] = useState(false);
+    const [variantRefreshKey, setVariantRefreshKey] = useState(0);
 
     useEffect(() => {
         const init = async () => {
@@ -90,19 +111,21 @@ export default function ProductFormPage({
                             )
                         ),
                         description: product?.description ?? "",
+                        taxRate: product?.taxRate ?? 18,
+                        costPrice: product?.costPrice ?? 0,
+                        wholesaleNet: product?.wholesaleNet ?? 0,
+                        retailNet: product?.retailNet ?? 0,
                     });
 
                     setProductName(product?.name ?? "Edit Product");
                     return;
                 }
 
-                // Auto-suggest code only in create mode.
                 if (mode === "create") {
                     try {
                         const suggested = await getSuggestedProductCode();
 
                         setForm((prev) => {
-                            // Do not overwrite if user already typed something somehow.
                             if (prev.productCode.trim()) {
                                 return prev;
                             }
@@ -132,12 +155,23 @@ export default function ProductFormPage({
         value: string | string[]
     ) => {
         setForm((prev) => {
+            const numericFields: Array<keyof ProductFormData> = [
+                "taxRate",
+                "costPrice",
+                "wholesaleNet",
+                "retailNet",
+            ];
+
+            const normalizedValue =
+                typeof value === "string" && numericFields.includes(field)
+                    ? Number(value)
+                    : value;
+
             const next = {
                 ...prev,
-                [field]: value,
+                [field]: normalizedValue,
             } as ProductFormData;
 
-            // Always keep primary category inside assigned category list.
             if (field === "categoryId") {
                 const primaryCategoryId = value as string;
                 next.categoryIds = primaryCategoryId
@@ -145,7 +179,6 @@ export default function ProductFormPage({
                     : prev.categoryIds;
             }
 
-            // If category list changes and primary is removed, choose first selected as new primary.
             if (field === "categoryIds") {
                 const nextCategoryIds = value as string[];
                 next.categoryIds = nextCategoryIds;
@@ -232,10 +265,95 @@ export default function ProductFormPage({
         }
     };
 
+    const handleAddVariant = () => {
+        setEditingVariant(null);
+        setVariantEditorMode("create");
+        setActiveTab("general");
+    };
+
+    const handleEditVariant = (variant: ProductVariant) => {
+        setEditingVariant(variant);
+        setVariantEditorMode("edit");
+        setActiveTab("general");
+    };
+
+    const handleCancelVariantEditor = () => {
+        setEditingVariant(null);
+        setVariantEditorMode(null);
+    };
+
+    const handleSubmitVariant = async (data: ProductVariantFormData) => {
+        if (!productId) {
+            return;
+        }
+
+        setVariantSubmitting(true);
+
+        try {
+            if (variantEditorMode === "edit" && editingVariant) {
+                await updateProductVariant(productId, editingVariant.id, data);
+            } else {
+                await createProductVariant(productId, data);
+            }
+
+            setEditingVariant(null);
+            setVariantEditorMode(null);
+            setVariantRefreshKey((prev) => prev + 1);
+            setActiveTab("variants");
+        } catch (error: any) {
+            console.error(error);
+            alert(error?.response?.data?.message || "Failed to save variant");
+        } finally {
+            setVariantSubmitting(false);
+        }
+    };
+
+    const renderVariantEditorBlock = () => {
+        if (mode === "create" || !productId || !variantEditorMode) {
+            return null;
+        }
+
+        return (
+            <div className="space-y-6">
+                <div className="rounded-2xl border border-borderColorCustom bg-white">
+                    <div className="border-b border-borderColorCustom px-6 py-4">
+                        <h4 className="text-lg font-semibold text-textPrimary">
+                            {variantEditorMode === "edit"
+                                ? `Edit Variant${editingVariant?.sku ? ` · ${editingVariant.sku}` : ""}`
+                                : "Create Variant"}
+                        </h4>
+                        <p className="mt-1 text-sm text-textSecondary">
+                            Variant values override the parent product only where needed.
+                        </p>
+                    </div>
+
+                    <div className="p-6">
+                        <ProductVariantForm
+                            variant={editingVariant}
+                            defaultValues={{
+                                taxRate: form.taxRate,
+                                costPrice: form.costPrice,
+                                wholesaleNet: form.wholesaleNet,
+                                retailNet: form.retailNet,
+                            }}
+                            onSubmit={handleSubmitVariant}
+                            onCancel={handleCancelVariantEditor}
+                            submitting={variantSubmitting}
+                        />
+                    </div>
+                </div>
+
+                {variantEditorMode === "edit" && editingVariant ? (
+                    <VariantMediaTab variantId={editingVariant.id} />
+                ) : null}
+            </div>
+        );
+    };
+
     const renderTabContent = () => {
         if (activeTab === "general") {
             return (
-                <>
+                <div className="space-y-6">
                     <ProductForm
                         form={form}
                         brands={brands}
@@ -243,7 +361,22 @@ export default function ProductFormPage({
                         onChange={handleChange}
                     />
 
-                    <div className="mt-6 flex items-center justify-end gap-3">
+                    {mode === "edit" && productId ? (
+                        <ProductMediaTab productId={productId} />
+                    ) : (
+                        <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
+                            <h4 className="text-lg font-semibold text-textPrimary">
+                                Product Media
+                            </h4>
+                            <p className="mt-2 text-textSecondary">
+                                Save the product first before uploading media.
+                            </p>
+                        </div>
+                    )}
+
+                    {renderVariantEditorBlock()}
+
+                    <div className="flex items-center justify-end gap-3">
                         {mode === "edit" && (
                             <button
                                 type="button"
@@ -271,7 +404,7 @@ export default function ProductFormPage({
                             {saving ? "Saving..." : "Save"}
                         </button>
                     </div>
-                </>
+                </div>
             );
         }
 
@@ -289,24 +422,22 @@ export default function ProductFormPage({
                 );
             }
 
-            return <ProductVariantsTab productId={productId} />;
-        }
-
-        if (activeTab === "media") {
-            if (mode === "create" || !productId) {
-                return (
-                    <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
-                        <h4 className="text-lg font-semibold text-textPrimary">
-                            Media
-                        </h4>
-                        <p className="mt-2 text-textSecondary">
-                            Save the product first before adding media.
-                        </p>
-                    </div>
-                );
-            }
-
-            return <ProductMediaTab productId={productId} />;
+            return (
+                <ProductVariantsTab
+                    key={variantRefreshKey}
+                    productId={productId}
+                    onAddVariant={handleAddVariant}
+                    onEditVariant={handleEditVariant}
+                    defaultValues={{
+                        taxRate: form.taxRate,
+                        costPrice: form.costPrice,
+                        wholesaleNet: form.wholesaleNet,
+                        retailNet: form.retailNet,
+                        stock: 0,
+                        isActive: true,
+                    }}
+                />
+            );
         }
 
         return (
@@ -368,8 +499,8 @@ export default function ProductFormPage({
                             type="button"
                             onClick={() => setActiveTab("general")}
                             className={`pb-3 text-sm ${activeTab === "general"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
+                                ? "border-b-2 border-primary font-medium text-primary"
+                                : "text-textSecondary"
                                 }`}
                         >
                             General
@@ -379,8 +510,8 @@ export default function ProductFormPage({
                             type="button"
                             onClick={() => setActiveTab("variants")}
                             className={`pb-3 text-sm ${activeTab === "variants"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
+                                ? "border-b-2 border-primary font-medium text-primary"
+                                : "text-textSecondary"
                                 }`}
                         >
                             Variants
@@ -388,21 +519,10 @@ export default function ProductFormPage({
 
                         <button
                             type="button"
-                            onClick={() => setActiveTab("media")}
-                            className={`pb-3 text-sm ${activeTab === "media"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
-                                }`}
-                        >
-                            Media
-                        </button>
-
-                        <button
-                            type="button"
                             onClick={() => setActiveTab("seo")}
                             className={`pb-3 text-sm ${activeTab === "seo"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
+                                ? "border-b-2 border-primary font-medium text-primary"
+                                : "text-textSecondary"
                                 }`}
                         >
                             SEO

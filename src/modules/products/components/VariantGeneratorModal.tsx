@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     generateProductVariants,
     type GenerateProductVariantsPayload,
@@ -9,6 +9,14 @@ import { Plus, Trash2, X } from "lucide-react";
 
 interface VariantGeneratorModalProps {
     productId: string;
+    defaultValues: {
+        taxRate: number;
+        costPrice: number;
+        wholesaleNet: number;
+        retailNet: number;
+        stock?: number;
+        isActive?: boolean;
+    };
     onClose: () => void;
     onGenerated: () => Promise<void> | void;
 }
@@ -27,6 +35,7 @@ const createAttributeRow = (): AttributeRow => ({
 
 export default function VariantGeneratorModal({
     productId,
+    defaultValues,
     onClose,
     onGenerated,
 }: VariantGeneratorModalProps) {
@@ -35,13 +44,22 @@ export default function VariantGeneratorModal({
         createAttributeRow(),
     ]);
 
-    const [taxRate, setTaxRate] = useState(18);
-    const [costPrice, setCostPrice] = useState(0);
-    const [wholesaleNet, setWholesaleNet] = useState(0);
-    const [retailNet, setRetailNet] = useState(0);
-    const [stock, setStock] = useState(0);
-    const [isActive, setIsActive] = useState(true);
+    const [taxRate, setTaxRate] = useState(defaultValues.taxRate ?? 18);
+    const [costPrice, setCostPrice] = useState(defaultValues.costPrice ?? 0);
+    const [wholesaleNet, setWholesaleNet] = useState(defaultValues.wholesaleNet ?? 0);
+    const [retailNet, setRetailNet] = useState(defaultValues.retailNet ?? 0);
+    const [stock, setStock] = useState(defaultValues.stock ?? 0);
+    const [isActive, setIsActive] = useState(defaultValues.isActive ?? true);
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        setTaxRate(defaultValues.taxRate ?? 18);
+        setCostPrice(defaultValues.costPrice ?? 0);
+        setWholesaleNet(defaultValues.wholesaleNet ?? 0);
+        setRetailNet(defaultValues.retailNet ?? 0);
+        setStock(defaultValues.stock ?? 0);
+        setIsActive(defaultValues.isActive ?? true);
+    }, [defaultValues]);
 
     const parsedAttributes = useMemo(() => {
         return attributes
@@ -52,7 +70,10 @@ export default function VariantGeneratorModal({
                     .map((value) => value.trim())
                     .filter(Boolean),
             }))
-            .filter((attribute) => attribute.name.length > 0 && attribute.values.length > 0);
+            .filter(
+                (attribute) =>
+                    attribute.name.length > 0 && attribute.values.length > 0
+            );
     }, [attributes]);
 
     const totalCombinations = useMemo(() => {
@@ -70,10 +91,7 @@ export default function VariantGeneratorModal({
             return [];
         }
 
-        const build = (
-            index: number,
-            current: string[]
-        ): string[] => {
+        const build = (index: number, current: string[]): string[] => {
             if (index === parsedAttributes.length) {
                 return [current.join(" / ")];
             }
@@ -98,9 +116,7 @@ export default function VariantGeneratorModal({
     ) => {
         setAttributes((prev) =>
             prev.map((attribute) =>
-                attribute.id === id
-                    ? { ...attribute, [field]: value }
-                    : attribute
+                attribute.id === id ? { ...attribute, [field]: value } : attribute
             )
         );
     };
@@ -139,9 +155,7 @@ export default function VariantGeneratorModal({
         try {
             const result = await generateProductVariants(productId, payload);
 
-            const messageParts = [
-                `${result.createdCount} variant(s) created`,
-            ];
+            const messageParts = [`${result.createdCount} variant(s) created`];
 
             if (result.skippedCount > 0) {
                 messageParts.push(`${result.skippedCount} skipped`);
@@ -153,9 +167,7 @@ export default function VariantGeneratorModal({
             onClose();
         } catch (error: any) {
             console.error(error);
-            alert(
-                error?.response?.data?.message || "Failed to generate variants"
-            );
+            alert(error?.response?.data?.message || "Failed to generate variants");
         } finally {
             setSubmitting(false);
         }
@@ -274,6 +286,10 @@ export default function VariantGeneratorModal({
                                 <h4 className="text-lg font-semibold text-textPrimary">
                                     Shared Defaults
                                 </h4>
+                                <p className="mt-1 text-sm text-textSecondary">
+                                    These values are prefilled from the parent product and will be
+                                    applied to all generated variants.
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 px-6 py-6 md:grid-cols-2 xl:grid-cols-3">

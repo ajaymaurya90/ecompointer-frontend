@@ -4,6 +4,49 @@ export interface ProductMedia {
     isPrimary: boolean;
 }
 
+export interface ProductMediaVariant {
+    id: string;
+    url: string;
+    width: number | null;
+    height: number | null;
+    format: string;
+    quality: number;
+}
+
+export interface ProductMediaAsset {
+    id: string;
+    title: string | null;
+    altText: string | null;
+    originalUrl: string;
+    mimeType: string | null;
+    fileSize: number | null;
+    width: number | null;
+    height: number | null;
+}
+
+export interface ProductMediaItem {
+    id: string;
+    productId: string | null;
+    variantId: string | null;
+    role: "GALLERY" | "THUMBNAIL" | "ZOOM" | "SWATCH" | "LIFESTYLE";
+    isPrimary: boolean;
+    position: number;
+    asset: ProductMediaAsset;
+    variants: Record<string, ProductMediaVariant>;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ProductMediaListResponse {
+    data: ProductMediaItem[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
 export interface ProductVariant {
     id: string;
     retailGross: number;
@@ -38,6 +81,10 @@ export interface ProductFormData {
     categoryId: string;      // primary category
     categoryIds: string[];   // all assigned categories
     description: string;
+    taxRate: number;
+    costPrice: number;
+    wholesaleNet: number;
+    retailNet: number;
 }
 
 export interface Product {
@@ -54,6 +101,13 @@ export interface Product {
         categoryId: string;
         category: ProductCategory;
     }>;
+    taxRate?: number;
+    costPrice?: number;
+    wholesaleNet?: number;
+    retailNet?: number;
+    costGrossPrice?: number;
+    wholesaleGrossPrice?: number;
+    retailGrossPrice?: number;
     media: ProductMedia[];
     variants: ProductVariant[];
     totalStock?: number;

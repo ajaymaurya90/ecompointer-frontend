@@ -7,10 +7,10 @@ export interface VariantGeneratorAttributeInput {
 
 export interface GenerateProductVariantsPayload {
     attributes: VariantGeneratorAttributeInput[];
-    taxRate: number;
-    costPrice: number;
-    wholesaleNet: number;
-    retailNet: number;
+    taxRate?: number;
+    costPrice?: number;
+    wholesaleNet?: number;
+    retailNet?: number;
     stock: number;
     isActive?: boolean;
 }

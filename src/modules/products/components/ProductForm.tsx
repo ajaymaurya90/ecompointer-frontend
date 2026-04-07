@@ -78,8 +78,6 @@ export default function ProductForm({
         .map((id) => selectedCategoryMap.get(id))
         .filter(Boolean) as ProductOption[];
 
-    // Build a visual-highlight set so when child category is selected,
-    // its full parent chain also appears active in the tree.
     const visuallySelectedIds = useMemo(() => {
         const result = new Set<string>();
 
@@ -95,7 +93,6 @@ export default function ProductForm({
         return result;
     }, [form.categoryIds, parentMap]);
 
-    // Auto-expand parent chain for selected categories so user can see the path.
     useEffect(() => {
         const nextExpandedIds = new Set<string>();
 
@@ -129,7 +126,6 @@ export default function ProductForm({
             const nextCategoryIds = form.categoryIds.filter((id) => id !== categoryId);
             onChange("categoryIds", nextCategoryIds);
 
-            // If removed category was primary, fallback to first remaining category.
             if (form.categoryId === categoryId) {
                 onChange("categoryId", nextCategoryIds[0] || "");
             }
@@ -140,7 +136,6 @@ export default function ProductForm({
         const nextCategoryIds = [...form.categoryIds, categoryId];
         onChange("categoryIds", nextCategoryIds);
 
-        // Auto-set first selected category as primary.
         if (!form.categoryId) {
             onChange("categoryId", categoryId);
         }
@@ -186,6 +181,30 @@ export default function ProductForm({
         return filterTree(categories, categorySearch);
     }, [categories, categorySearch]);
 
+    const wholesaleGross = useMemo(() => {
+        return Number(
+            (form.wholesaleNet + (form.wholesaleNet * form.taxRate) / 100).toFixed(2)
+        );
+    }, [form.wholesaleNet, form.taxRate]);
+
+    const retailGross = useMemo(() => {
+        return Number(
+            (form.retailNet + (form.retailNet * form.taxRate) / 100).toFixed(2)
+        );
+    }, [form.retailNet, form.taxRate]);
+
+    const handleNumberChange = (
+        field: keyof ProductFormData,
+        value: string
+    ) => {
+        const parsed = value === "" ? 0 : Number(value);
+
+        onChange(
+            field,
+            String(Number.isNaN(parsed) ? 0 : parsed)
+        );
+    };
+
     const renderCategoryNode = (category: ProductOption, level = 0) => {
         const hasChildren = !!category.children?.length;
         const isExpanded = expandedIds.includes(category.id);
@@ -197,10 +216,10 @@ export default function ProductForm({
             <div key={category.id}>
                 <div
                     className={`flex items-center justify-between rounded-lg px-3 py-2 transition ${isActuallySelected
-                            ? "bg-blue-50"
-                            : isVisuallySelected
-                                ? "bg-slate-50"
-                                : "hover:bg-background"
+                        ? "bg-blue-50"
+                        : isVisuallySelected
+                            ? "bg-slate-50"
+                            : "hover:bg-background"
                         }`}
                     style={{ paddingLeft: `${12 + level * 20}px` }}
                 >
@@ -226,10 +245,8 @@ export default function ProductForm({
 
                         <span
                             className={`truncate text-sm ${isActuallySelected
-                                    ? "font-medium text-primary"
-                                    : isVisuallySelected
-                                        ? "text-textPrimary"
-                                        : "text-textPrimary"
+                                ? "font-medium text-primary"
+                                : "text-textPrimary"
                                 }`}
                         >
                             {category.name}
@@ -245,10 +262,10 @@ export default function ProductForm({
 
                         <span
                             className={`h-2.5 w-2.5 rounded-full ${isActuallySelected
-                                    ? "bg-green-500"
-                                    : isVisuallySelected
-                                        ? "bg-blue-300"
-                                        : "bg-slate-300"
+                                ? "bg-green-500"
+                                : isVisuallySelected
+                                    ? "bg-blue-300"
+                                    : "bg-slate-300"
                                 }`}
                         />
                     </div>
@@ -266,200 +283,324 @@ export default function ProductForm({
     };
 
     return (
-        <div className="rounded-2xl border border-borderColorCustom bg-white">
-            <div className="border-b border-borderColorCustom px-6 py-4">
-                <h4 className="text-lg font-semibold text-textPrimary">
-                    General Information
-                </h4>
-            </div>
-
-            <div className="space-y-6 px-6 py-6">
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-textPrimary">
-                        Name
-                    </label>
-                    <input
-                        type="text"
-                        value={form.name}
-                        onChange={(e) => onChange("name", e.target.value)}
-                        className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
-                        placeholder="Product name"
-                    />
+        <div className="space-y-6 ">
+            <div className="rounded-2xl border border-borderColorCustom bg-white">
+                <div className="border-b border-borderColorCustom px-6 py-4">
+                    <h4 className="text-lg font-semibold text-textPrimary">
+                        General Information
+                    </h4>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-textPrimary">
-                            Brand
-                        </label>
-                        <select
-                            value={form.brandId}
-                            onChange={(e) => onChange("brandId", e.target.value)}
-                            className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
-                        >
-                            <option value="">Select brand</option>
-                            {brands.map((brand) => (
-                                <option key={brand.id} value={brand.id}>
-                                    {brand.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                            <span className="text-sm font-medium text-textPrimary">
-                                Product Code
-                            </span>
-
-                            <FieldTooltip text="Product code is auto-suggested on create, but you can still edit it manually." />
+                <div className="space-y-8 px-6 py-6">
+                    <div className="space-y-6">
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-textPrimary">
+                                Name
+                            </label>
+                            <input
+                                type="text"
+                                value={form.name}
+                                onChange={(e) => onChange("name", e.target.value)}
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                placeholder="Product name"
+                            />
                         </div>
 
-                        <input
-                            type="text"
-                            value={form.productCode}
-                            onChange={(e) => onChange("productCode", e.target.value)}
-                            className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
-                            placeholder="Product code"
-                        />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                    <div className="lg:col-span-8">
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                            <span className="text-sm font-medium text-textPrimary">
-                                Categories
-                            </span>
-
-                            <FieldTooltip text="Assign multiple categories to this product. If a child category is selected, its parent path is highlighted visually in the tree." />
-                        </div>
-
-                        <div ref={categoryDropdownRef} className="relative">
-                            <div
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => setCategoryDropdownOpen((prev) => !prev)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        setCategoryDropdownOpen((prev) => !prev);
-                                    }
-
-                                    if (e.key === "Escape") {
-                                        setCategoryDropdownOpen(false);
-                                    }
-                                }}
-                                className="flex min-h-[52px] w-full flex-wrap items-center gap-2 rounded-lg border border-borderColorCustom bg-white px-3 py-2 text-left outline-none transition focus:border-primary"
-                            >
-                                {selectedCategories.length ? (
-                                    selectedCategories.map((category) => {
-                                        const isPrimary = form.categoryId === category.id;
-
-                                        return (
-                                            <span
-                                                key={category.id}
-                                                className={`inline-flex items-center gap-2 rounded-md border px-3 py-1 text-sm ${isPrimary
-                                                        ? "border-primary bg-blue-50 text-primary"
-                                                        : "border-borderColorCustom bg-background text-textPrimary"
-                                                    }`}
-                                            >
-                                                <span>{category.name}</span>
-
-                                                {isPrimary ? (
-                                                    <span className="text-[11px] font-medium">
-                                                        Primary
-                                                    </span>
-                                                ) : null}
-
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        removeSelectedCategory(category.id);
-                                                    }}
-                                                    className="text-textSecondary transition hover:text-red-600"
-                                                >
-                                                    ✕
-                                                </button>
-                                            </span>
-                                        );
-                                    })
-                                ) : (
-                                    <span className="text-textSecondary">
-                                        Assign categories to...
-                                    </span>
-                                )}
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-textPrimary">
+                                    Brand
+                                </label>
+                                <select
+                                    value={form.brandId}
+                                    onChange={(e) => onChange("brandId", e.target.value)}
+                                    className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                >
+                                    <option value="">Select brand</option>
+                                    {brands.map((brand) => (
+                                        <option key={brand.id} value={brand.id}>
+                                            {brand.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
-                            {categoryDropdownOpen ? (
-                                <div className="absolute z-20 mt-2 max-h-[420px] w-full overflow-hidden rounded-xl border border-borderColorCustom bg-white shadow-lg">
-                                    <div className="border-b border-borderColorCustom p-3">
-                                        <input
-                                            type="text"
-                                            value={categorySearch}
-                                            onChange={(e) => setCategorySearch(e.target.value)}
-                                            placeholder="Search categories..."
-                                            className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
-                                        />
-                                    </div>
+                            <div>
+                                <div className="mb-2 flex items-center justify-between gap-3">
+                                    <span className="text-sm font-medium text-textPrimary">
+                                        Product Code
+                                    </span>
 
-                                    <div className="max-h-[340px] overflow-auto p-2">
-                                        {filteredCategories.length ? (
-                                            filteredCategories.map((category) =>
-                                                renderCategoryNode(category)
-                                            )
+                                    <FieldTooltip text="Product code is auto-suggested on create, but you can still edit it manually." />
+                                </div>
+
+                                <input
+                                    type="text"
+                                    value={form.productCode}
+                                    onChange={(e) => onChange("productCode", e.target.value)}
+                                    className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                    placeholder="Product code"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                            <div className="lg:col-span-8">
+                                <div className="mb-2 flex items-center justify-between gap-3">
+                                    <span className="text-sm font-medium text-textPrimary">
+                                        Categories
+                                    </span>
+
+                                    <FieldTooltip text="Assign multiple categories to this product. If a child category is selected, its parent path is highlighted visually in the tree." />
+                                </div>
+
+                                <div ref={categoryDropdownRef} className="relative">
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => setCategoryDropdownOpen((prev) => !prev)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                setCategoryDropdownOpen((prev) => !prev);
+                                            }
+
+                                            if (e.key === "Escape") {
+                                                setCategoryDropdownOpen(false);
+                                            }
+                                        }}
+                                        className="flex min-h-[52px] w-full flex-wrap items-center gap-2 rounded-lg border border-borderColorCustom bg-white px-3 py-2 text-left outline-none transition focus:border-primary"
+                                    >
+                                        {selectedCategories.length ? (
+                                            selectedCategories.map((category) => {
+                                                const isPrimary = form.categoryId === category.id;
+
+                                                return (
+                                                    <span
+                                                        key={category.id}
+                                                        className={`inline-flex items-center gap-2 rounded-md border px-3 py-1 text-sm ${isPrimary
+                                                            ? "border-primary bg-blue-50 text-primary"
+                                                            : "border-borderColorCustom bg-background text-textPrimary"
+                                                            }`}
+                                                    >
+                                                        <span>{category.name}</span>
+
+                                                        {isPrimary ? (
+                                                            <span className="text-[11px] font-medium">
+                                                                Primary
+                                                            </span>
+                                                        ) : null}
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                removeSelectedCategory(category.id);
+                                                            }}
+                                                            className="text-textSecondary transition hover:text-red-600"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </span>
+                                                );
+                                            })
                                         ) : (
-                                            <div className="px-3 py-6 text-sm text-textSecondary">
-                                                No categories found.
-                                            </div>
+                                            <span className="text-textSecondary">
+                                                Assign categories to...
+                                            </span>
                                         )}
                                     </div>
+
+                                    {categoryDropdownOpen ? (
+                                        <div className="absolute z-20 mt-2 max-h-[420px] w-full overflow-hidden rounded-xl border border-borderColorCustom bg-white shadow-lg">
+                                            <div className="border-b border-borderColorCustom p-3">
+                                                <input
+                                                    type="text"
+                                                    value={categorySearch}
+                                                    onChange={(e) => setCategorySearch(e.target.value)}
+                                                    placeholder="Search categories..."
+                                                    className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                                />
+                                            </div>
+
+                                            <div className="max-h-[340px] overflow-auto p-2">
+                                                {filteredCategories.length ? (
+                                                    filteredCategories.map((category) =>
+                                                        renderCategoryNode(category)
+                                                    )
+                                                ) : (
+                                                    <div className="px-3 py-6 text-sm text-textSecondary">
+                                                        No categories found.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : null}
                                 </div>
-                            ) : null}
+                            </div>
+
+                            <div className="lg:col-span-4">
+                                <div className="mb-2 flex items-center justify-between gap-3">
+                                    <span className="text-sm font-medium text-textPrimary">
+                                        Primary Category
+                                    </span>
+
+                                    <FieldTooltip text="This is the default category used for the main product classification, storefront navigation, and future SEO/canonical logic." />
+                                </div>
+
+                                <select
+                                    value={form.categoryId}
+                                    onChange={(e) => onChange("categoryId", e.target.value)}
+                                    className="min-h-[52px] w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                >
+                                    <option value="">Select primary</option>
+                                    {selectedCategories.map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="lg:col-span-4">
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                            <span className="text-sm font-medium text-textPrimary">
-                                Primary Category
-                            </span>
+                        <div>
+                            <div className="mb-2 flex items-center justify-between">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Description
+                                </span>
 
-                            <FieldTooltip text="This is the default category used for the main product classification, storefront navigation, and future SEO/canonical logic." />
+                                <FieldTooltip text="Add detailed product description with formatting, links, and lists." />
+                            </div>
+
+                            <RichTextEditor
+                                value={form.description}
+                                onChange={(html) => onChange("description", html)}
+                                placeholder="Write product description..."
+                            />
                         </div>
-
-                        <select
-                            value={form.categoryId}
-                            onChange={(e) => onChange("categoryId", e.target.value)}
-                            className="min-h-[52px] w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
-                        >
-                            <option value="">Select primary</option>
-                            {selectedCategories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
                     </div>
                 </div>
+            </div>
+            <div className="rounded-2xl border border-borderColorCustom bg-white">
+                <div className="border-b border-borderColorCustom px-6 py-4">
+                    <h4 className="text-lg font-semibold text-textPrimary">
+                        Price Settings
+                    </h4>
+                    <p className="mt-1 text-sm text-textSecondary">
+                        These values act as default commercial values for new variants.
+                        Variants can override them later if needed.
+                    </p>
+                </div>
 
-                <div>
-                    <div className="mb-2 flex items-center justify-between">
-                        <span className="text-sm font-medium text-textPrimary">
-                            Description
-                        </span>
+                <div className="space-y-6 px-6 py-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Tax Rate %
+                                </span>
+                                <FieldTooltip text="Default product tax rate. New variants will start with this value." />
+                            </div>
 
-                        <FieldTooltip text="Add detailed product description with formatting, links, and lists." />
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.taxRate}
+                                onChange={(e) => handleNumberChange("taxRate", e.target.value)}
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Cost Price
+                                </span>
+                                <FieldTooltip text="Default cost price for the product. New variants can inherit and override it." />
+                            </div>
+
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.costPrice}
+                                onChange={(e) => handleNumberChange("costPrice", e.target.value)}
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Wholesale Net
+                                </span>
+                                <FieldTooltip text="Default wholesale net price for new variants." />
+                            </div>
+
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.wholesaleNet}
+                                onChange={(e) =>
+                                    handleNumberChange("wholesaleNet", e.target.value)
+                                }
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Wholesale Gross
+                                </span>
+                                <FieldTooltip text="Calculated automatically from wholesale net and tax rate." />
+                            </div>
+
+                            <div className="rounded-lg border border-borderColorCustom bg-background px-3 py-2 text-textSecondary">
+                                {wholesaleGross}
+                            </div>
+                        </div>
                     </div>
 
-                    <RichTextEditor
-                        value={form.description}
-                        onChange={(html) => onChange("description", html)}
-                        placeholder="Write product description..."
-                    />
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Retail Net
+                                </span>
+                                <FieldTooltip text="Default retail net price for new variants." />
+                            </div>
+
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.retailNet}
+                                onChange={(e) =>
+                                    handleNumberChange("retailNet", e.target.value)
+                                }
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Retail Gross
+                                </span>
+                                <FieldTooltip text="Calculated automatically from retail net and tax rate." />
+                            </div>
+
+                            <div className="rounded-lg border border-borderColorCustom bg-background px-3 py-2 text-textSecondary">
+                                {retailGross}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
     );
 }

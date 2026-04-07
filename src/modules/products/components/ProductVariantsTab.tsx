@@ -2,21 +2,27 @@
 
 import { useEffect, useState } from "react";
 import {
-    createProductVariant,
     deleteProductVariant,
     getProductVariantSummary,
     getProductVariants,
-    updateProductVariant,
     type ProductVariant,
-    type ProductVariantFormData,
     type ProductVariantSummary,
 } from "@/modules/products/api/productVariantApi";
-import ProductVariantForm from "@/modules/products/components/ProductVariantForm";
 import VariantGeneratorModal from "@/modules/products/components/VariantGeneratorModal";
 import { Pencil, Trash2, Plus, WandSparkles } from "lucide-react";
 
 interface ProductVariantsTabProps {
     productId: string;
+    onAddVariant: () => void;
+    onEditVariant: (variant: ProductVariant) => void;
+    defaultValues: {
+        taxRate: number;
+        costPrice: number;
+        wholesaleNet: number;
+        retailNet: number;
+        stock?: number;
+        isActive?: boolean;
+    };
 }
 
 function getAttributeSummary(variant: ProductVariant): string {
@@ -37,20 +43,23 @@ function getAttributeSummary(variant: ProductVariant): string {
     }
 
     return attributeValues
-        .map((item) => `${item.attributeValue.attribute.name}: ${item.attributeValue.value}`)
+        .map(
+            (item) =>
+                `${item.attributeValue.attribute.name}: ${item.attributeValue.value}`
+        )
         .join(" / ");
 }
 
 export default function ProductVariantsTab({
     productId,
+    onAddVariant,
+    onEditVariant,
+    defaultValues,
 }: ProductVariantsTabProps) {
     const [variants, setVariants] = useState<ProductVariant[]>([]);
     const [summary, setSummary] = useState<ProductVariantSummary | null>(null);
     const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [showForm, setShowForm] = useState(false);
     const [showGenerator, setShowGenerator] = useState(false);
-    const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
 
     const loadData = async () => {
         try {
@@ -72,18 +81,8 @@ export default function ProductVariantsTab({
     };
 
     useEffect(() => {
-        loadData();
+        void loadData();
     }, [productId]);
-
-    const handleAdd = () => {
-        setEditingVariant(null);
-        setShowForm(true);
-    };
-
-    const handleEdit = (variant: ProductVariant) => {
-        setEditingVariant(variant);
-        setShowForm(true);
-    };
 
     const handleDelete = async (variant: ProductVariant) => {
         const confirmed = window.confirm(
@@ -103,37 +102,12 @@ export default function ProductVariantsTab({
         }
     };
 
-    const handleSubmit = async (data: ProductVariantFormData) => {
-        setSubmitting(true);
-
-        try {
-            if (editingVariant) {
-                await updateProductVariant(productId, editingVariant.id, data);
-            } else {
-                await createProductVariant(productId, data);
-            }
-
-            setShowForm(false);
-            setEditingVariant(null);
-            await loadData();
-        } catch (error: any) {
-            console.error(error);
-            alert(error?.response?.data?.message || "Failed to save variant");
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleCancel = () => {
-        setShowForm(false);
-        setEditingVariant(null);
-    };
-
     return (
         <div className="space-y-6">
             {showGenerator && (
                 <VariantGeneratorModal
                     productId={productId}
+                    defaultValues={defaultValues}
                     onClose={() => setShowGenerator(false)}
                     onGenerated={loadData}
                 />
@@ -148,6 +122,7 @@ export default function ProductVariantsTab({
 
                         <div className="flex items-center gap-3">
                             <button
+                                type="button"
                                 onClick={() => setShowGenerator(true)}
                                 className="inline-flex items-center gap-2 rounded-lg border border-borderColorCustom px-4 py-2 text-sm transition hover:bg-background"
                             >
@@ -156,7 +131,8 @@ export default function ProductVariantsTab({
                             </button>
 
                             <button
-                                onClick={handleAdd}
+                                type="button"
+                                onClick={onAddVariant}
                                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                             >
                                 <Plus size={16} />
@@ -192,15 +168,6 @@ export default function ProductVariantsTab({
                 </div>
             </div>
 
-            {showForm && (
-                <ProductVariantForm
-                    variant={editingVariant}
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                    submitting={submitting}
-                />
-            )}
-
             <div className="overflow-hidden rounded-2xl border border-borderColorCustom bg-white">
                 <div className="border-b border-borderColorCustom px-6 py-4">
                     <h4 className="text-lg font-semibold text-textPrimary">
@@ -223,13 +190,27 @@ export default function ProductVariantsTab({
                     <table className="w-full border-collapse text-left">
                         <thead className="border-b border-borderColorCustom bg-background">
                             <tr>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">SKU</th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">Attributes</th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">Retail Gross</th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">Wholesale Gross</th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">Stock</th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">Status</th>
-                                <th className="px-6 py-4 text-right font-semibold text-textPrimary">Actions</th>
+                                <th className="px-6 py-4 font-semibold text-textPrimary">
+                                    SKU
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-textPrimary">
+                                    Attributes
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-textPrimary">
+                                    Retail Gross
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-textPrimary">
+                                    Wholesale Gross
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-textPrimary">
+                                    Stock
+                                </th>
+                                <th className="px-6 py-4 font-semibold text-textPrimary">
+                                    Status
+                                </th>
+                                <th className="px-6 py-4 text-right font-semibold text-textPrimary">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
 
@@ -239,13 +220,21 @@ export default function ProductVariantsTab({
                                     key={variant.id}
                                     className="border-b border-borderColorCustom transition hover:bg-background"
                                 >
-                                    <td className="px-6 py-4 text-textPrimary">{variant.sku}</td>
+                                    <td className="px-6 py-4 text-textPrimary">
+                                        {variant.sku}
+                                    </td>
                                     <td className="px-6 py-4 text-textSecondary">
                                         {getAttributeSummary(variant)}
                                     </td>
-                                    <td className="px-6 py-4 text-textSecondary">{variant.retailGross}</td>
-                                    <td className="px-6 py-4 text-textSecondary">{variant.wholesaleGross}</td>
-                                    <td className="px-6 py-4 text-textSecondary">{variant.stock}</td>
+                                    <td className="px-6 py-4 text-textSecondary">
+                                        {variant.retailGross}
+                                    </td>
+                                    <td className="px-6 py-4 text-textSecondary">
+                                        {variant.wholesaleGross}
+                                    </td>
+                                    <td className="px-6 py-4 text-textSecondary">
+                                        {variant.stock}
+                                    </td>
                                     <td className="px-6 py-4">
                                         <span
                                             className={`rounded-full px-2 py-1 text-xs font-medium ${variant.isActive
@@ -259,7 +248,8 @@ export default function ProductVariantsTab({
                                     <td className="px-6 py-4">
                                         <div className="flex justify-end gap-3">
                                             <button
-                                                onClick={() => handleEdit(variant)}
+                                                type="button"
+                                                onClick={() => onEditVariant(variant)}
                                                 className="text-blue-600 hover:text-blue-700"
                                                 aria-label={`Edit ${variant.sku}`}
                                             >
@@ -267,7 +257,8 @@ export default function ProductVariantsTab({
                                             </button>
 
                                             <button
-                                                onClick={() => handleDelete(variant)}
+                                                type="button"
+                                                onClick={() => void handleDelete(variant)}
                                                 className="text-red-600 hover:text-red-700"
                                                 aria-label={`Delete ${variant.sku}`}
                                             >

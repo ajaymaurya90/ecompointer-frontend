@@ -3,6 +3,7 @@ import type {
     Product,
     ProductFormData,
     ProductOption,
+    ProductMediaListResponse,
 } from "@/modules/products/types/product";
 
 interface ProductListMeta {
@@ -40,7 +41,11 @@ export async function getProductById(productId: string): Promise<Product> {
     return response.data?.data ?? response.data;
 }
 
-export async function getSuggestedProductCode(): Promise<{ code: string; prefix: string; sequence: number }> {
+export async function getSuggestedProductCode(): Promise<{
+    code: string;
+    prefix: string;
+    sequence: number;
+}> {
     const response = await api.get("/products/suggest-code");
     return response.data;
 }
@@ -74,6 +79,63 @@ export async function getProductBrands(): Promise<ProductOption[]> {
 export async function getProductCategories(): Promise<ProductOption[]> {
     const response = await api.get("/categories");
     return buildCategoryTree(response.data || []);
+}
+
+export async function getProductMedia(
+    productId: string,
+    page = 1,
+    limit = 20
+): Promise<ProductMediaListResponse> {
+    const response = await api.get(`/media/product/${productId}`, {
+        params: { page, limit },
+    });
+
+    return response.data;
+}
+
+export async function uploadProductMedia(
+    productId: string,
+    file: File
+) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post(`/media/upload/product/${productId}`, formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+
+    return response.data;
+}
+
+export async function updateProductMediaLink(
+    linkId: string,
+    payload: {
+        isPrimary?: boolean;
+        role?: "GALLERY" | "THUMBNAIL" | "ZOOM" | "SWATCH" | "LIFESTYLE";
+        title?: string;
+        altText?: string;
+    }
+) {
+    const response = await api.patch(`/media/product-link/${linkId}`, payload);
+    return response.data;
+}
+
+export async function deleteProductMediaLink(linkId: string) {
+    const response = await api.delete(`/media/product-link/${linkId}`);
+    return response.data;
+}
+
+export async function reorderProductMedia(
+    productId: string,
+    items: Array<{ id: string; position: number }>
+) {
+    const response = await api.patch(`/media/product/${productId}/reorder`, {
+        items,
+    });
+
+    return response.data;
 }
 
 // Convert flat category list into nested tree for Shopware-style selector.
