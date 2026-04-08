@@ -8,6 +8,11 @@ import type { Product } from "@/modules/products/types/product";
 export interface ProductListFilters {
     search: string;
     categoryId: string;
+    productType: "" | "PHYSICAL" | "DIGITAL" | "SERVICE" | "OTHER";
+    isFeatured: "" | "true" | "false";
+    isFreeShipping: "" | "true" | "false";
+    isClearance: "" | "true" | "false";
+    stockState: "" | "in_stock" | "low_stock" | "out_of_stock";
     sortBy: "createdAt" | "name" | "productCode";
     order: "asc" | "desc";
     limit: number;
@@ -26,6 +31,15 @@ interface ProductState {
     setPage: (page: number) => Promise<void>;
     setSearch: (search: string) => void;
     setCategoryId: (categoryId: string) => Promise<void>;
+    setProductType: (productType: ProductListFilters["productType"]) => Promise<void>;
+    setFeaturedFilter: (value: ProductListFilters["isFeatured"]) => Promise<void>;
+    setFreeShippingFilter: (
+        value: ProductListFilters["isFreeShipping"]
+    ) => Promise<void>;
+    setClearanceFilter: (
+        value: ProductListFilters["isClearance"]
+    ) => Promise<void>;
+    setStockState: (stockState: ProductListFilters["stockState"]) => Promise<void>;
     setSort: (
         sortBy: "createdAt" | "name" | "productCode",
         order: "asc" | "desc"
@@ -39,10 +53,21 @@ interface ProductState {
 const defaultFilters: ProductListFilters = {
     search: "",
     categoryId: "",
+    productType: "",
+    isFeatured: "",
+    isFreeShipping: "",
+    isClearance: "",
+    stockState: "",
     sortBy: "createdAt",
     order: "desc",
     limit: 10,
 };
+
+function parseBooleanFilter(value: "" | "true" | "false"): boolean | undefined {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    return undefined;
+}
 
 export const useProductStore = create<ProductState>((set, get) => ({
     products: [],
@@ -61,6 +86,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
             limit: filters.limit,
             search: filters.search || undefined,
             categoryId: filters.categoryId || undefined,
+            productType: filters.productType || undefined,
+            isFeatured: parseBooleanFilter(filters.isFeatured),
+            isFreeShipping: parseBooleanFilter(filters.isFreeShipping),
+            isClearance: parseBooleanFilter(filters.isClearance),
+            stockState: filters.stockState || undefined,
             sortBy: filters.sortBy,
             order: filters.order,
             ...overrides,
@@ -83,8 +113,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
             });
         } catch (error: any) {
             set({
-                error:
-                    error.response?.data?.message || "Failed to fetch products",
+                error: error.response?.data?.message || "Failed to fetch products",
                 loading: false,
             });
         }
@@ -114,6 +143,81 @@ export const useProductStore = create<ProductState>((set, get) => ({
         }));
 
         await get().fetchProducts({ page: 1, categoryId: categoryId || undefined });
+    },
+
+    setProductType: async (productType) => {
+        set((state) => ({
+            page: 1,
+            filters: {
+                ...state.filters,
+                productType,
+            },
+        }));
+
+        await get().fetchProducts({
+            page: 1,
+            productType: productType || undefined,
+        });
+    },
+
+    setFeaturedFilter: async (value) => {
+        set((state) => ({
+            page: 1,
+            filters: {
+                ...state.filters,
+                isFeatured: value,
+            },
+        }));
+
+        await get().fetchProducts({
+            page: 1,
+            isFeatured: parseBooleanFilter(value),
+        });
+    },
+
+    setFreeShippingFilter: async (value) => {
+        set((state) => ({
+            page: 1,
+            filters: {
+                ...state.filters,
+                isFreeShipping: value,
+            },
+        }));
+
+        await get().fetchProducts({
+            page: 1,
+            isFreeShipping: parseBooleanFilter(value),
+        });
+    },
+
+    setClearanceFilter: async (value) => {
+        set((state) => ({
+            page: 1,
+            filters: {
+                ...state.filters,
+                isClearance: value,
+            },
+        }));
+
+        await get().fetchProducts({
+            page: 1,
+            isClearance: parseBooleanFilter(value),
+        });
+    },
+
+    setStockState: async (stockState) => {
+        set((state) => ({
+            page: 1,
+            filters: {
+                ...state.filters,
+                stockState,
+            },
+        }));
+
+        await get().fetchProducts({
+            page: 1,
+            stockState: stockState || undefined,
+        });
     },
 
     setSort: async (sortBy, order) => {
@@ -163,6 +267,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
             order: defaultFilters.order,
             search: undefined,
             categoryId: undefined,
+            productType: undefined,
+            isFeatured: undefined,
+            isFreeShipping: undefined,
+            isClearance: undefined,
+            stockState: undefined,
         });
     },
 

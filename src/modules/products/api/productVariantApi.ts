@@ -1,5 +1,5 @@
 import { api } from "@/lib/http";
-import type { ProductMediaItem } from "@/modules/products/types/product";
+import type { ProductMediaItem, ProductType } from "@/modules/products/types/product";
 
 export interface ProductVariant {
     id: string;
@@ -7,13 +7,25 @@ export interface ProductVariant {
     sku: string;
     size?: string | null;
     color?: string | null;
+
     taxRate: number;
     costPrice: number;
     wholesaleNet: number;
     wholesaleGross: number;
     retailNet: number;
     retailGross: number;
+
     stock: number;
+
+    isFeatured: boolean;
+    isFreeShipping: boolean;
+    isClearance: boolean;
+
+    minOrderQuantity: number;
+    maxOrderQuantity?: number | null;
+    deliveryTimeLabel?: string | null;
+    restockTimeDays?: number | null;
+
     isActive: boolean;
     createdAt?: string;
     updatedAt?: string;
@@ -32,11 +44,23 @@ export interface ProductVariantFormData {
     sku?: string;
     size?: string;
     color?: string;
+
     taxRate: number;
     costPrice: number;
     wholesaleNet: number;
     retailNet: number;
+
     stock: number;
+
+    isFeatured: boolean;
+    isFreeShipping: boolean;
+    isClearance: boolean;
+
+    minOrderQuantity: number;
+    maxOrderQuantity?: number;
+    deliveryTimeLabel?: string;
+    restockTimeDays?: number;
+
     isActive?: boolean;
 }
 

@@ -9,7 +9,7 @@ import {
     deleteProduct,
     getProductCategories,
 } from "@/modules/products/api/productApi";
-import { Search, RotateCcw } from "lucide-react";
+import { Search, RotateCcw, Plus, Package, Layers3, ShieldCheck, AlertTriangle } from "lucide-react";
 
 export default function ProductsPageContainer() {
     const router = useRouter();
@@ -26,6 +26,11 @@ export default function ProductsPageContainer() {
         setPage,
         setSearch,
         setCategoryId,
+        setProductType,
+        setFeaturedFilter,
+        setFreeShippingFilter,
+        setClearanceFilter,
+        setStockState,
         setSort,
         setLimit,
         applySearch,
@@ -85,6 +90,22 @@ export default function ProductsPageContainer() {
         return `${from}-${to} of ${total} products`;
     }, [page, total, filters.limit]);
 
+    const stats = useMemo(() => {
+        const activeCount = products.filter((item) => item.isActive !== false).length;
+        const parentWithVariants = products.filter((item) => (item.variantCount ?? 0) > 0).length;
+        const lowStockCount = products.filter((item) => {
+            const stock = item.totalStock ?? item.stock ?? 0;
+            return stock > 0 && stock <= 5;
+        }).length;
+
+        return {
+            total: total,
+            active: activeCount,
+            withVariants: parentWithVariants,
+            lowStock: lowStockCount,
+        };
+    }, [products, total]);
+
     const handleSearchSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         await applySearch();
@@ -98,21 +119,80 @@ export default function ProductsPageContainer() {
                         Products
                     </h2>
                     <p className="mt-2 text-textSecondary">
-                        Manage your catalog with search, filters, sorting and pagination.
+                        Manage your catalog with a Shopware-style workspace.
                     </p>
                 </div>
 
                 <button
                     type="button"
                     onClick={handleAddProduct}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                 >
+                    <Plus size={16} />
                     Add Product
                 </button>
             </div>
 
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-borderColorCustom bg-card p-5">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="text-sm text-textSecondary">Total Products</div>
+                            <div className="mt-2 text-2xl font-semibold text-textPrimary">
+                                {stats.total}
+                            </div>
+                        </div>
+                        <div className="rounded-xl border border-borderColorCustom bg-background p-3">
+                            <Package size={18} className="text-textSecondary" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-borderColorCustom bg-card p-5">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="text-sm text-textSecondary">Active Products</div>
+                            <div className="mt-2 text-2xl font-semibold text-textPrimary">
+                                {stats.active}
+                            </div>
+                        </div>
+                        <div className="rounded-xl border border-borderColorCustom bg-background p-3">
+                            <ShieldCheck size={18} className="text-textSecondary" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-borderColorCustom bg-card p-5">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="text-sm text-textSecondary">Products With Variants</div>
+                            <div className="mt-2 text-2xl font-semibold text-textPrimary">
+                                {stats.withVariants}
+                            </div>
+                        </div>
+                        <div className="rounded-xl border border-borderColorCustom bg-background p-3">
+                            <Layers3 size={18} className="text-textSecondary" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-borderColorCustom bg-card p-5">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="text-sm text-textSecondary">Low Stock</div>
+                            <div className="mt-2 text-2xl font-semibold text-textPrimary">
+                                {stats.lowStock}
+                            </div>
+                        </div>
+                        <div className="rounded-xl border border-borderColorCustom bg-background p-3">
+                            <AlertTriangle size={18} className="text-textSecondary" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="rounded-2xl border border-borderColorCustom bg-card p-6">
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_220px_220px_180px_auto]">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
                     <form onSubmit={handleSearchSubmit} className="relative">
                         <Search
                             size={18}
@@ -141,6 +221,61 @@ export default function ProductsPageContainer() {
                     </select>
 
                     <select
+                        value={filters.productType}
+                        onChange={(e) => void setProductType(e.target.value as any)}
+                        className="rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                    >
+                        <option value="">All product types</option>
+                        <option value="PHYSICAL">Physical</option>
+                        <option value="DIGITAL">Digital</option>
+                        <option value="SERVICE">Service</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-5">
+                    <select
+                        value={filters.isFeatured}
+                        onChange={(e) => void setFeaturedFilter(e.target.value as any)}
+                        className="rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                    >
+                        <option value="">Featured: All</option>
+                        <option value="true">Featured only</option>
+                        <option value="false">Not featured</option>
+                    </select>
+
+                    <select
+                        value={filters.isFreeShipping}
+                        onChange={(e) => void setFreeShippingFilter(e.target.value as any)}
+                        className="rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                    >
+                        <option value="">Free Shipping: All</option>
+                        <option value="true">Free shipping only</option>
+                        <option value="false">Without free shipping</option>
+                    </select>
+
+                    <select
+                        value={filters.isClearance}
+                        onChange={(e) => void setClearanceFilter(e.target.value as any)}
+                        className="rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                    >
+                        <option value="">Clearance: All</option>
+                        <option value="true">Clearance only</option>
+                        <option value="false">Not clearance</option>
+                    </select>
+
+                    <select
+                        value={filters.stockState}
+                        onChange={(e) => void setStockState(e.target.value as any)}
+                        className="rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                    >
+                        <option value="">Stock: All</option>
+                        <option value="in_stock">In stock</option>
+                        <option value="low_stock">Low stock</option>
+                        <option value="out_of_stock">Out of stock</option>
+                    </select>
+
+                    <select
                         value={`${filters.sortBy}:${filters.order}`}
                         onChange={(e) => {
                             const [sortBy, order] = e.target.value.split(":") as [
@@ -158,11 +293,13 @@ export default function ProductsPageContainer() {
                         <option value="productCode:asc">Code A-Z</option>
                         <option value="productCode:desc">Code Z-A</option>
                     </select>
+                </div>
 
+                <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                     <select
                         value={filters.limit}
                         onChange={(e) => void setLimit(Number(e.target.value))}
-                        className="rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                        className="rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary xl:w-[180px]"
                     >
                         <option value={10}>10 / page</option>
                         <option value={20}>20 / page</option>
@@ -181,6 +318,7 @@ export default function ProductsPageContainer() {
 
                         <button
                             type="submit"
+                            onClick={(e) => void handleSearchSubmit(e as any)}
                             className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                         >
                             Search

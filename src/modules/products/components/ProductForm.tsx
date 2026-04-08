@@ -4,15 +4,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type {
     ProductFormData,
     ProductOption,
+    ProductType,
 } from "@/modules/products/types/product";
 import FieldTooltip from "@/components/ui/FieldTooltip";
 import RichTextEditor from "@/components/ui/RichTextEditor";
+import ToggleSwitch from "@/components/ui/ToggleSwitch";
 
 interface ProductFormProps {
     form: ProductFormData;
     brands: ProductOption[];
     categories: ProductOption[];
-    onChange: (field: keyof ProductFormData, value: string | string[]) => void;
+    onChange: (
+        field: keyof ProductFormData,
+        value: string | string[] | boolean
+    ) => void;
 }
 
 export default function ProductForm({
@@ -197,12 +202,14 @@ export default function ProductForm({
         field: keyof ProductFormData,
         value: string
     ) => {
-        const parsed = value === "" ? 0 : Number(value);
+        if (value === "") {
+            onChange(field, "0");
+            return;
+        }
 
-        onChange(
-            field,
-            String(Number.isNaN(parsed) ? 0 : parsed)
-        );
+        const parsed = Number(value);
+
+        onChange(field, String(Number.isNaN(parsed) ? 0 : parsed));
     };
 
     const renderCategoryNode = (category: ProductOption, level = 0) => {
@@ -283,7 +290,7 @@ export default function ProductForm({
     };
 
     return (
-        <div className="space-y-6 ">
+        <div className="space-y-6">
             <div className="rounded-2xl border border-borderColorCustom bg-white">
                 <div className="border-b border-borderColorCustom px-6 py-4">
                     <h4 className="text-lg font-semibold text-textPrimary">
@@ -306,7 +313,7 @@ export default function ProductForm({
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-textPrimary">
                                     Brand
@@ -330,7 +337,6 @@ export default function ProductForm({
                                     <span className="text-sm font-medium text-textPrimary">
                                         Product Code
                                     </span>
-
                                     <FieldTooltip text="Product code is auto-suggested on create, but you can still edit it manually." />
                                 </div>
 
@@ -342,6 +348,28 @@ export default function ProductForm({
                                     placeholder="Product code"
                                 />
                             </div>
+
+                            <div>
+                                <div className="mb-2 flex items-center justify-between gap-3">
+                                    <span className="text-sm font-medium text-textPrimary">
+                                        Product Type
+                                    </span>
+                                    <FieldTooltip text="Use PHYSICAL for normal shippable products. DIGITAL and SERVICE can later drive storefront and fulfillment behavior." />
+                                </div>
+
+                                <select
+                                    value={form.productType}
+                                    onChange={(e) =>
+                                        onChange("productType", e.target.value as ProductType)
+                                    }
+                                    className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                >
+                                    <option value="PHYSICAL">Physical</option>
+                                    <option value="DIGITAL">Digital</option>
+                                    <option value="SERVICE">Service</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -350,7 +378,6 @@ export default function ProductForm({
                                     <span className="text-sm font-medium text-textPrimary">
                                         Categories
                                     </span>
-
                                     <FieldTooltip text="Assign multiple categories to this product. If a child category is selected, its parent path is highlighted visually in the tree." />
                                 </div>
 
@@ -417,7 +444,9 @@ export default function ProductForm({
                                                 <input
                                                     type="text"
                                                     value={categorySearch}
-                                                    onChange={(e) => setCategorySearch(e.target.value)}
+                                                    onChange={(e) =>
+                                                        setCategorySearch(e.target.value)
+                                                    }
                                                     placeholder="Search categories..."
                                                     className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
                                                 />
@@ -444,7 +473,6 @@ export default function ProductForm({
                                     <span className="text-sm font-medium text-textPrimary">
                                         Primary Category
                                     </span>
-
                                     <FieldTooltip text="This is the default category used for the main product classification, storefront navigation, and future SEO/canonical logic." />
                                 </div>
 
@@ -468,7 +496,6 @@ export default function ProductForm({
                                 <span className="text-sm font-medium text-textPrimary">
                                     Description
                                 </span>
-
                                 <FieldTooltip text="Add detailed product description with formatting, links, and lists." />
                             </div>
 
@@ -481,6 +508,47 @@ export default function ProductForm({
                     </div>
                 </div>
             </div>
+
+            <div className="rounded-2xl border border-borderColorCustom bg-white">
+                <div className="border-b border-borderColorCustom px-6 py-4">
+                    <h4 className="text-lg font-semibold text-textPrimary">
+                        Product Flags
+                    </h4>
+                    <p className="mt-1 text-sm text-textSecondary">
+                        Merchandising flags used for listing, promotion, and future storefront behavior.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 px-6 py-6 md:grid-cols-3">
+                    <div className="rounded-xl border border-borderColorCustom bg-background px-4 py-4">
+                        <ToggleSwitch
+                            checked={form.isFeatured}
+                            onChange={(checked) => onChange("isFeatured", checked)}
+                            label="Featured Product"
+                            description="Highlight this product in curated or promoted sections."
+                        />
+                    </div>
+
+                    <div className="rounded-xl border border-borderColorCustom bg-background px-4 py-4">
+                        <ToggleSwitch
+                            checked={form.isFreeShipping}
+                            onChange={(checked) => onChange("isFreeShipping", checked)}
+                            label="Free Shipping"
+                            description="Mark this product as eligible for free shipping."
+                        />
+                    </div>
+
+                    <div className="rounded-xl border border-borderColorCustom bg-background px-4 py-4">
+                        <ToggleSwitch
+                            checked={form.isClearance}
+                            onChange={(checked) => onChange("isClearance", checked)}
+                            label="Clearance Sale"
+                            description="Use this for end-of-line or clearance stock."
+                        />
+                    </div>
+                </div>
+            </div>
+
             <div className="rounded-2xl border border-borderColorCustom bg-white">
                 <div className="border-b border-borderColorCustom px-6 py-4">
                     <h4 className="text-lg font-semibold text-textPrimary">
@@ -600,7 +668,123 @@ export default function ProductForm({
                     </div>
                 </div>
             </div>
-        </div>
 
+            <div className="rounded-2xl border border-borderColorCustom bg-white">
+                <div className="border-b border-borderColorCustom px-6 py-4">
+                    <h4 className="text-lg font-semibold text-textPrimary">
+                        Inventory & Fulfillment
+                    </h4>
+                    <p className="mt-1 text-sm text-textSecondary">
+                        Product-level stock is meaningful for standalone products. When variants exist, storefront and orders should use variant stock.
+                    </p>
+                </div>
+
+                <div className="space-y-6 px-6 py-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Stock
+                                </span>
+                                <FieldTooltip text="Use this for standalone products. For products with variants, variant stock is the actual sellable stock." />
+                            </div>
+                            <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={form.stock}
+                                onChange={(e) => handleNumberChange("stock", e.target.value)}
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Min Order Quantity
+                                </span>
+                                <FieldTooltip text="Smallest quantity a buyer can order." />
+                            </div>
+                            <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={form.minOrderQuantity}
+                                onChange={(e) =>
+                                    handleNumberChange("minOrderQuantity", e.target.value)
+                                }
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Max Order Quantity
+                                </span>
+                                <FieldTooltip text="Optional upper order limit per purchase." />
+                            </div>
+                            <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={form.maxOrderQuantity === "" ? "" : form.maxOrderQuantity}
+                                onChange={(e) =>
+                                    onChange(
+                                        "maxOrderQuantity",
+                                        e.target.value === "" ? "" : e.target.value
+                                    )
+                                }
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                placeholder="Optional"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Restock Time (days)
+                                </span>
+                                <FieldTooltip text="Manual restock lead time in days, e.g. 1, 3, 5." />
+                            </div>
+                            <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={form.restockTimeDays === "" ? "" : form.restockTimeDays}
+                                onChange={(e) =>
+                                    onChange(
+                                        "restockTimeDays",
+                                        e.target.value === "" ? "" : e.target.value
+                                    )
+                                }
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                placeholder="Optional"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        <div>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium text-textPrimary">
+                                    Delivery Time
+                                </span>
+                                <FieldTooltip text="Merchant-defined label like 1-2 days, 3-5 days, 5-7 days." />
+                            </div>
+                            <input
+                                type="text"
+                                value={form.deliveryTimeLabel}
+                                onChange={(e) =>
+                                    onChange("deliveryTimeLabel", e.target.value)
+                                }
+                                className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                placeholder="e.g. 3-5 days"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }

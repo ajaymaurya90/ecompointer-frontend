@@ -1,3 +1,5 @@
+export type ProductType = "PHYSICAL" | "DIGITAL" | "SERVICE" | "OTHER";
+
 export interface ProductMedia {
     id: string;
     url: string;
@@ -78,13 +80,27 @@ export interface ProductFormData {
     name: string;
     productCode: string;
     brandId: string;
-    categoryId: string;      // primary category
-    categoryIds: string[];   // all assigned categories
+    categoryId: string;
+    categoryIds: string[];
     description: string;
+
+    productType: ProductType;
+
     taxRate: number;
     costPrice: number;
     wholesaleNet: number;
     retailNet: number;
+
+    stock: number;
+
+    isFeatured: boolean;
+    isFreeShipping: boolean;
+    isClearance: boolean;
+
+    minOrderQuantity: number;
+    maxOrderQuantity: number | "";
+    deliveryTimeLabel: string;
+    restockTimeDays: number | "";
 }
 
 export interface Product {
@@ -92,22 +108,42 @@ export interface Product {
     name: string;
     productCode: string;
     description?: string;
+
     brandId?: string;
     categoryId?: string;
     categoryIds?: string[];
+
     brand?: ProductBrand;
     category?: ProductCategory;
     categoryAssignments?: Array<{
         categoryId: string;
         category: ProductCategory;
     }>;
+
+    productType?: ProductType;
+
     taxRate?: number;
     costPrice?: number;
     wholesaleNet?: number;
     retailNet?: number;
+
     costGrossPrice?: number;
     wholesaleGrossPrice?: number;
     retailGrossPrice?: number;
+
+    stock?: number;
+
+    isFeatured?: boolean;
+    isFreeShipping?: boolean;
+    isClearance?: boolean;
+
+    minOrderQuantity?: number;
+    maxOrderQuantity?: number | null;
+    deliveryTimeLabel?: string | null;
+    restockTimeDays?: number | null;
+
+    hasVariants?: boolean;
+
     media: ProductMedia[];
     variants: ProductVariant[];
     totalStock?: number;

@@ -22,6 +22,11 @@ export interface ProductListParams {
     limit?: number;
     search?: string;
     categoryId?: string;
+    productType?: "PHYSICAL" | "DIGITAL" | "SERVICE" | "OTHER";
+    isFeatured?: boolean;
+    isFreeShipping?: boolean;
+    isClearance?: boolean;
+    stockState?: "in_stock" | "low_stock" | "out_of_stock";
     sortBy?: "createdAt" | "name" | "productCode";
     order?: "asc" | "desc";
 }

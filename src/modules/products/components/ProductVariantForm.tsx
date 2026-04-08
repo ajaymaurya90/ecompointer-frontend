@@ -7,6 +7,7 @@ import type {
 } from "@/modules/products/api/productVariantApi";
 import FieldTooltip from "@/components/ui/FieldTooltip";
 import { RotateCcw } from "lucide-react";
+import ToggleSwitch from "@/components/ui/ToggleSwitch";
 
 interface ProductVariantFormProps {
     variant?: ProductVariant | null;
@@ -15,6 +16,13 @@ interface ProductVariantFormProps {
         costPrice: number;
         wholesaleNet: number;
         retailNet: number;
+        isFeatured: boolean;
+        isFreeShipping: boolean;
+        isClearance: boolean;
+        minOrderQuantity: number;
+        maxOrderQuantity?: number | null;
+        deliveryTimeLabel?: string | null;
+        restockTimeDays?: number | null;
     };
     onSubmit: (data: ProductVariantFormData) => Promise<void>;
     onCancel: () => void;
@@ -30,6 +38,13 @@ const emptyForm: ProductVariantFormData = {
     wholesaleNet: 0,
     retailNet: 0,
     stock: 0,
+    isFeatured: false,
+    isFreeShipping: false,
+    isClearance: false,
+    minOrderQuantity: 1,
+    maxOrderQuantity: undefined,
+    deliveryTimeLabel: "",
+    restockTimeDays: undefined,
     isActive: true,
 };
 
@@ -38,6 +53,17 @@ type CommercialField =
     | "costPrice"
     | "wholesaleNet"
     | "retailNet";
+
+type MerchandisingField =
+    | "isFeatured"
+    | "isFreeShipping"
+    | "isClearance";
+
+type FulfillmentField =
+    | "minOrderQuantity"
+    | "maxOrderQuantity"
+    | "deliveryTimeLabel"
+    | "restockTimeDays";
 
 function formatNumber(value: number) {
     return Number(value || 0).toFixed(2);
@@ -63,6 +89,13 @@ export default function ProductVariantForm({
                 wholesaleNet: variant.wholesaleNet,
                 retailNet: variant.retailNet,
                 stock: variant.stock,
+                isFeatured: variant.isFeatured,
+                isFreeShipping: variant.isFreeShipping,
+                isClearance: variant.isClearance,
+                minOrderQuantity: variant.minOrderQuantity,
+                maxOrderQuantity: variant.maxOrderQuantity ?? undefined,
+                deliveryTimeLabel: variant.deliveryTimeLabel ?? "",
+                restockTimeDays: variant.restockTimeDays ?? undefined,
                 isActive: variant.isActive,
             });
             return;
@@ -74,6 +107,18 @@ export default function ProductVariantForm({
             costPrice: defaultValues?.costPrice ?? emptyForm.costPrice,
             wholesaleNet: defaultValues?.wholesaleNet ?? emptyForm.wholesaleNet,
             retailNet: defaultValues?.retailNet ?? emptyForm.retailNet,
+            isFeatured: defaultValues?.isFeatured ?? emptyForm.isFeatured,
+            isFreeShipping:
+                defaultValues?.isFreeShipping ?? emptyForm.isFreeShipping,
+            isClearance: defaultValues?.isClearance ?? emptyForm.isClearance,
+            minOrderQuantity:
+                defaultValues?.minOrderQuantity ?? emptyForm.minOrderQuantity,
+            maxOrderQuantity:
+                defaultValues?.maxOrderQuantity ?? emptyForm.maxOrderQuantity,
+            deliveryTimeLabel:
+                defaultValues?.deliveryTimeLabel ?? emptyForm.deliveryTimeLabel,
+            restockTimeDays:
+                defaultValues?.restockTimeDays ?? emptyForm.restockTimeDays,
         });
     }, [variant, defaultValues]);
 
@@ -93,7 +138,8 @@ export default function ProductVariantForm({
         return Number(
             (
                 (defaultValues?.wholesaleNet ?? 0) +
-                ((defaultValues?.wholesaleNet ?? 0) * (defaultValues?.taxRate ?? 0)) / 100
+                ((defaultValues?.wholesaleNet ?? 0) * (defaultValues?.taxRate ?? 0)) /
+                100
             ).toFixed(2)
         );
     }, [defaultValues]);
@@ -102,7 +148,8 @@ export default function ProductVariantForm({
         return Number(
             (
                 (defaultValues?.retailNet ?? 0) +
-                ((defaultValues?.retailNet ?? 0) * (defaultValues?.taxRate ?? 0)) / 100
+                ((defaultValues?.retailNet ?? 0) * (defaultValues?.taxRate ?? 0)) /
+                100
             ).toFixed(2)
         );
     }, [defaultValues]);
@@ -111,7 +158,15 @@ export default function ProductVariantForm({
         field: keyof ProductVariantFormData,
         value: string
     ) => {
-        const parsed = value === "" ? 0 : Number(value);
+        if (value === "") {
+            setForm((prev) => ({
+                ...prev,
+                [field]: 0,
+            }));
+            return;
+        }
+
+        const parsed = Number(value);
 
         setForm((prev) => ({
             ...prev,
@@ -123,7 +178,12 @@ export default function ProductVariantForm({
         if (form.sku !== undefined && form.sku.trim() === "") {
             const payload = { ...form };
             delete payload.sku;
-            await onSubmit(payload);
+            await onSubmit({
+                ...payload,
+                size: payload.size?.trim() || undefined,
+                color: payload.color?.trim() || undefined,
+                deliveryTimeLabel: payload.deliveryTimeLabel?.trim() || undefined,
+            });
             return;
         }
 
@@ -132,31 +192,39 @@ export default function ProductVariantForm({
             sku: form.sku?.trim() || undefined,
             size: form.size?.trim() || undefined,
             color: form.color?.trim() || undefined,
+            deliveryTimeLabel: form.deliveryTimeLabel?.trim() || undefined,
         });
     };
 
-    const isUsingProductDefault = (field: CommercialField) => {
+    const isUsingProductDefault = (
+        field: CommercialField | MerchandisingField | FulfillmentField
+    ) => {
         if (!defaultValues) {
             return false;
         }
 
-        return form[field] === defaultValues[field];
+        return (form as any)[field] === (defaultValues as any)[field];
     };
 
-    const resetToProductDefault = (field: CommercialField) => {
+    const resetToProductDefault = (
+        field: CommercialField | MerchandisingField | FulfillmentField
+    ) => {
         if (!defaultValues) {
             return;
         }
 
         setForm((prev) => ({
             ...prev,
-            [field]: defaultValues[field],
+            [field]: (defaultValues as any)[field],
         }));
     };
 
-    const renderCommercialFieldHeader = (
+    const renderHeaderWithBadge = (
         label: string,
-        field: CommercialField,
+        field:
+            | CommercialField
+            | MerchandisingField
+            | FulfillmentField,
         tooltip: string
     ) => {
         const inherited = isUsingProductDefault(field);
@@ -180,13 +248,68 @@ export default function ProductVariantForm({
         );
     };
 
-    const renderDefaultHint = (field: CommercialField, value: number) => {
+    const renderNumericDefaultHint = (
+        field: CommercialField | FulfillmentField,
+        value: number | null | undefined
+    ) => {
         const inherited = isUsingProductDefault(field);
 
         return (
             <div className="mt-2 flex items-center justify-between gap-3 text-xs">
                 <span className={inherited ? "text-slate-500" : "text-blue-700"}>
-                    Product default: {formatNumber(value)}
+                    Product default: {value ?? 0}
+                </span>
+
+                {!inherited ? (
+                    <button
+                        type="button"
+                        onClick={() => resetToProductDefault(field)}
+                        className="inline-flex items-center gap-1 text-slate-600 transition hover:text-textPrimary"
+                    >
+                        <RotateCcw size={12} />
+                        Reset
+                    </button>
+                ) : null}
+            </div>
+        );
+    };
+
+    const renderTextDefaultHint = (
+        field: FulfillmentField,
+        value: string | null | undefined
+    ) => {
+        const inherited = isUsingProductDefault(field);
+
+        return (
+            <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                <span className={inherited ? "text-slate-500" : "text-blue-700"}>
+                    Product default: {value || "-"}
+                </span>
+
+                {!inherited ? (
+                    <button
+                        type="button"
+                        onClick={() => resetToProductDefault(field)}
+                        className="inline-flex items-center gap-1 text-slate-600 transition hover:text-textPrimary"
+                    >
+                        <RotateCcw size={12} />
+                        Reset
+                    </button>
+                ) : null}
+            </div>
+        );
+    };
+
+    const renderBooleanDefaultHint = (
+        field: MerchandisingField,
+        value: boolean | null | undefined
+    ) => {
+        const inherited = isUsingProductDefault(field);
+
+        return (
+            <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                <span className={inherited ? "text-slate-500" : "text-blue-700"}>
+                    Product default: {value ? "Yes" : "No"}
                 </span>
 
                 {!inherited ? (
@@ -267,6 +390,76 @@ export default function ProductVariantForm({
                 <div className="rounded-2xl border border-borderColorCustom bg-background/40 p-5">
                     <div className="mb-4">
                         <h5 className="text-base font-semibold text-textPrimary">
+                            Variant Flags
+                        </h5>
+                        <p className="mt-1 text-sm text-textSecondary">
+                            These flags inherit from the product by default and can be overridden for this variant.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div className="rounded-xl border border-borderColorCustom bg-white p-4">
+                            {renderHeaderWithBadge(
+                                "Featured Product",
+                                "isFeatured",
+                                "Highlight this variant in curated or promoted sections."
+                            )}
+                            <ToggleSwitch
+                                checked={form.isFeatured}
+                                onChange={(checked) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        isFeatured: checked,
+                                    }))
+                                }
+                                label="Enabled"
+                            />
+                            {renderBooleanDefaultHint("isFeatured", defaultValues?.isFeatured)}
+                        </div>
+
+                        <div className="rounded-xl border border-borderColorCustom bg-white p-4">
+                            {renderHeaderWithBadge(
+                                "Free Shipping",
+                                "isFreeShipping",
+                                "Mark this variant as eligible for free shipping."
+                            )}
+                            <ToggleSwitch
+                                checked={form.isFreeShipping}
+                                onChange={(checked) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        isFreeShipping: checked,
+                                    }))
+                                }
+                                label="Enabled"
+                            />
+                            {renderBooleanDefaultHint("isFreeShipping", defaultValues?.isFreeShipping)}
+                        </div>
+
+                        <div className="rounded-xl border border-borderColorCustom bg-white p-4">
+                            {renderHeaderWithBadge(
+                                "Clearance Sale",
+                                "isClearance",
+                                "Use this for end-of-line or clearance stock."
+                            )}
+                            <ToggleSwitch
+                                checked={form.isClearance}
+                                onChange={(checked) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        isClearance: checked,
+                                    }))
+                                }
+                                label="Enabled"
+                            />
+                            {renderBooleanDefaultHint("isClearance", defaultValues?.isClearance)}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-borderColorCustom bg-background/40 p-5">
+                    <div className="mb-4">
+                        <h5 className="text-base font-semibold text-textPrimary">
                             Commercial Values
                         </h5>
                         <p className="mt-1 text-sm text-textSecondary">
@@ -277,7 +470,7 @@ export default function ProductVariantForm({
 
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
                         <div>
-                            {renderCommercialFieldHeader(
+                            {renderHeaderWithBadge(
                                 "Tax Rate %",
                                 "taxRate",
                                 "Default tax rate comes from the parent product. Change only if this variant truly differs."
@@ -293,11 +486,11 @@ export default function ProductVariantForm({
                                     : "border-blue-300 text-textPrimary"
                                     }`}
                             />
-                            {renderDefaultHint("taxRate", defaultValues?.taxRate ?? 0)}
+                            {renderNumericDefaultHint("taxRate", defaultValues?.taxRate)}
                         </div>
 
                         <div>
-                            {renderCommercialFieldHeader(
+                            {renderHeaderWithBadge(
                                 "Cost Price",
                                 "costPrice",
                                 "Parent product default cost price for this variant."
@@ -313,11 +506,11 @@ export default function ProductVariantForm({
                                     : "border-blue-300 text-textPrimary"
                                     }`}
                             />
-                            {renderDefaultHint("costPrice", defaultValues?.costPrice ?? 0)}
+                            {renderNumericDefaultHint("costPrice", defaultValues?.costPrice)}
                         </div>
 
                         <div>
-                            {renderCommercialFieldHeader(
+                            {renderHeaderWithBadge(
                                 "Wholesale Net",
                                 "wholesaleNet",
                                 "Parent product default wholesale net price."
@@ -335,9 +528,9 @@ export default function ProductVariantForm({
                                     : "border-blue-300 text-textPrimary"
                                     }`}
                             />
-                            {renderDefaultHint(
+                            {renderNumericDefaultHint(
                                 "wholesaleNet",
-                                defaultValues?.wholesaleNet ?? 0
+                                defaultValues?.wholesaleNet
                             )}
                         </div>
 
@@ -370,7 +563,7 @@ export default function ProductVariantForm({
 
                     <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-4">
                         <div>
-                            {renderCommercialFieldHeader(
+                            {renderHeaderWithBadge(
                                 "Retail Net",
                                 "retailNet",
                                 "Parent product default retail net price."
@@ -388,7 +581,7 @@ export default function ProductVariantForm({
                                     : "border-blue-300 text-textPrimary"
                                     }`}
                             />
-                            {renderDefaultHint("retailNet", defaultValues?.retailNet ?? 0)}
+                            {renderNumericDefaultHint("retailNet", defaultValues?.retailNet)}
                         </div>
 
                         <div>
@@ -448,6 +641,143 @@ export default function ProductVariantForm({
                                 <option value="ACTIVE">Active</option>
                                 <option value="INACTIVE">Inactive</option>
                             </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-borderColorCustom bg-background/40 p-5">
+                    <div className="mb-4">
+                        <h5 className="text-base font-semibold text-textPrimary">
+                            Fulfillment & Order Rules
+                        </h5>
+                        <p className="mt-1 text-sm text-textSecondary">
+                            These values also inherit from the product by default and can be overridden for this variant.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+                        <div>
+                            {renderHeaderWithBadge(
+                                "Min Order Quantity",
+                                "minOrderQuantity",
+                                "Minimum quantity a buyer can purchase."
+                            )}
+                            <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={form.minOrderQuantity}
+                                onChange={(e) =>
+                                    handleNumberChange("minOrderQuantity", e.target.value)
+                                }
+                                className={`w-full rounded-lg border bg-white px-3 py-2 outline-none focus:border-primary ${isUsingProductDefault("minOrderQuantity")
+                                    ? "border-borderColorCustom text-textSecondary"
+                                    : "border-blue-300 text-textPrimary"
+                                    }`}
+                            />
+                            {renderNumericDefaultHint(
+                                "minOrderQuantity",
+                                defaultValues?.minOrderQuantity
+                            )}
+                        </div>
+
+                        <div>
+                            {renderHeaderWithBadge(
+                                "Max Order Quantity",
+                                "maxOrderQuantity",
+                                "Optional upper quantity limit per order."
+                            )}
+                            <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={
+                                    form.maxOrderQuantity === undefined
+                                        ? ""
+                                        : form.maxOrderQuantity
+                                }
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        maxOrderQuantity:
+                                            e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value),
+                                    }))
+                                }
+                                className={`w-full rounded-lg border bg-white px-3 py-2 outline-none focus:border-primary ${isUsingProductDefault("maxOrderQuantity")
+                                    ? "border-borderColorCustom text-textSecondary"
+                                    : "border-blue-300 text-textPrimary"
+                                    }`}
+                                placeholder="Optional"
+                            />
+                            {renderNumericDefaultHint(
+                                "maxOrderQuantity",
+                                defaultValues?.maxOrderQuantity
+                            )}
+                        </div>
+
+                        <div>
+                            {renderHeaderWithBadge(
+                                "Restock Time (days)",
+                                "restockTimeDays",
+                                "Manual restock lead time in days."
+                            )}
+                            <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={
+                                    form.restockTimeDays === undefined
+                                        ? ""
+                                        : form.restockTimeDays
+                                }
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        restockTimeDays:
+                                            e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value),
+                                    }))
+                                }
+                                className={`w-full rounded-lg border bg-white px-3 py-2 outline-none focus:border-primary ${isUsingProductDefault("restockTimeDays")
+                                    ? "border-borderColorCustom text-textSecondary"
+                                    : "border-blue-300 text-textPrimary"
+                                    }`}
+                                placeholder="Optional"
+                            />
+                            {renderNumericDefaultHint(
+                                "restockTimeDays",
+                                defaultValues?.restockTimeDays
+                            )}
+                        </div>
+
+                        <div>
+                            {renderHeaderWithBadge(
+                                "Delivery Time",
+                                "deliveryTimeLabel",
+                                "Merchant-defined label like 1-2 days or 3-5 days."
+                            )}
+                            <input
+                                type="text"
+                                value={form.deliveryTimeLabel || ""}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        deliveryTimeLabel: e.target.value,
+                                    }))
+                                }
+                                className={`w-full rounded-lg border bg-white px-3 py-2 outline-none focus:border-primary ${isUsingProductDefault("deliveryTimeLabel")
+                                    ? "border-borderColorCustom text-textSecondary"
+                                    : "border-blue-300 text-textPrimary"
+                                    }`}
+                                placeholder="e.g. 3-5 days"
+                            />
+                            {renderTextDefaultHint(
+                                "deliveryTimeLabel",
+                                defaultValues?.deliveryTimeLabel
+                            )}
                         </div>
                     </div>
                 </div>
