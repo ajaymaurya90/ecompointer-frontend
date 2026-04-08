@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProductForm from "@/modules/products/components/ProductForm";
 import ProductVariantsTab from "@/modules/products/components/ProductVariantsTab";
 import ProductMediaTab from "@/modules/products/components/ProductMediaTab";
@@ -38,9 +38,6 @@ interface ProductFormPageProps {
 type ProductTab = "general" | "variants" | "seo";
 type VariantEditorMode = "create" | "edit" | null;
 
-/**
- * ✅ UPDATED EMPTY FORM
- */
 const emptyForm: ProductFormData = {
     name: "",
     productCode: "",
@@ -48,24 +45,15 @@ const emptyForm: ProductFormData = {
     categoryId: "",
     categoryIds: [],
     description: "",
-
-    // NEW
     productType: "PHYSICAL",
-
     taxRate: 18,
     costPrice: 0,
     wholesaleNet: 0,
     retailNet: 0,
-
-    // FLAGS
     isFeatured: false,
     isFreeShipping: false,
     isClearance: false,
-
-    // INVENTORY
     stock: 0,
-
-    // FULFILLMENT
     minOrderQuantity: 1,
     maxOrderQuantity: "",
     deliveryTimeLabel: "",
@@ -77,6 +65,7 @@ export default function ProductFormPage({
     productId,
 }: ProductFormPageProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const [activeTab, setActiveTab] = useState<ProductTab>("general");
     const [loading, setLoading] = useState(mode === "edit");
@@ -92,6 +81,25 @@ export default function ProductFormPage({
         useState<ProductVariant | null>(null);
     const [variantSubmitting, setVariantSubmitting] = useState(false);
     const [variantRefreshKey, setVariantRefreshKey] = useState(0);
+
+    useEffect(() => {
+        const requestedTab = searchParams.get("tab");
+        const requestedVariantMode = searchParams.get("variantMode");
+
+        if (requestedTab === "variants") {
+            setActiveTab("variants");
+        } else if (requestedTab === "seo") {
+            setActiveTab("seo");
+        } else {
+            setActiveTab("general");
+        }
+
+        if (requestedVariantMode === "create") {
+            setVariantEditorMode("create");
+            setEditingVariant(null);
+            setActiveTab("variants");
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         const init = async () => {
@@ -122,11 +130,9 @@ export default function ProductFormPage({
 
                     setForm({
                         ...emptyForm,
-
                         name: product?.name ?? "",
                         productCode: product?.productCode ?? "",
                         brandId: product?.brandId ?? product?.brand?.id ?? "",
-
                         categoryId: primaryCategoryId,
                         categoryIds: Array.from(
                             new Set(
@@ -135,29 +141,20 @@ export default function ProductFormPage({
                                     : assignedCategoryIds
                             )
                         ),
-
                         description: product?.description ?? "",
-
                         productType: product?.productType ?? "PHYSICAL",
-
                         taxRate: product?.taxRate ?? 18,
                         costPrice: product?.costPrice ?? 0,
                         wholesaleNet: product?.wholesaleNet ?? 0,
                         retailNet: product?.retailNet ?? 0,
-
                         isFeatured: product?.isFeatured ?? false,
                         isFreeShipping: product?.isFreeShipping ?? false,
                         isClearance: product?.isClearance ?? false,
-
                         stock: product?.stock ?? 0,
-
                         minOrderQuantity: product?.minOrderQuantity ?? 1,
-                        maxOrderQuantity:
-                            product?.maxOrderQuantity ?? "",
-                        deliveryTimeLabel:
-                            product?.deliveryTimeLabel ?? "",
-                        restockTimeDays:
-                            product?.restockTimeDays ?? "",
+                        maxOrderQuantity: product?.maxOrderQuantity ?? "",
+                        deliveryTimeLabel: product?.deliveryTimeLabel ?? "",
+                        restockTimeDays: product?.restockTimeDays ?? "",
                     });
 
                     setProductName(product?.name ?? "Edit Product");
@@ -165,14 +162,21 @@ export default function ProductFormPage({
                 }
 
                 if (mode === "create") {
-                    const suggested = await getSuggestedProductCode();
-                    setForm((prev) => ({
-                        ...prev,
-                        productCode: prev.productCode || suggested.code,
-                    }));
+                    try {
+                        const suggested = await getSuggestedProductCode();
+
+                        setForm((prev) => ({
+                            ...prev,
+                            productCode: prev.productCode.trim()
+                                ? prev.productCode
+                                : suggested.code,
+                        }));
+                    } catch (error) {
+                        console.error("Failed to fetch suggested product code:", error);
+                    }
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Failed to load product form data:", error);
                 alert("Failed to load product form data");
             } finally {
                 setLoading(false);
@@ -182,9 +186,6 @@ export default function ProductFormPage({
         void init();
     }, [mode, productId]);
 
-    /**
-     * ✅ UPDATED HANDLE CHANGE
-     */
     const handleChange = (
         field: keyof ProductFormData,
         value: string | string[] | boolean
@@ -201,7 +202,7 @@ export default function ProductFormPage({
                 "restockTimeDays",
             ];
 
-            let normalizedValue: any = value;
+            let normalizedValue: string | string[] | boolean | number = value;
 
             if (typeof value === "string" && numericFields.includes(field)) {
                 normalizedValue = value === "" ? "" : Number(value);
@@ -213,19 +214,20 @@ export default function ProductFormPage({
             } as ProductFormData;
 
             if (field === "categoryId") {
-                const id = value as string;
-                next.categoryIds = id
-                    ? Array.from(new Set([id, ...prev.categoryIds]))
+                const primaryCategoryId = value as string;
+                next.categoryIds = primaryCategoryId
+                    ? Array.from(new Set([primaryCategoryId, ...prev.categoryIds]))
                     : prev.categoryIds;
             }
 
             if (field === "categoryIds") {
-                const ids = value as string[];
-                next.categoryIds = ids;
+                const nextCategoryIds = value as string[];
+                next.categoryIds = nextCategoryIds;
 
-                if (!ids.length) next.categoryId = "";
-                else if (!ids.includes(prev.categoryId)) {
-                    next.categoryId = ids[0];
+                if (!nextCategoryIds.length) {
+                    next.categoryId = "";
+                } else if (!nextCategoryIds.includes(prev.categoryId)) {
+                    next.categoryId = nextCategoryIds[0];
                 }
             }
 
@@ -233,47 +235,85 @@ export default function ProductFormPage({
         });
     };
 
+    const handleCancel = () => {
+        router.push("/dashboard/products");
+    };
+
     const handleSave = async () => {
-        if (!form.name.trim()) return alert("Product name required");
-        if (!form.productCode.trim()) return alert("Product code required");
-        if (!form.brandId) return alert("Select brand");
-        if (!form.categoryId) return alert("Select primary category");
+        if (!form.name.trim()) {
+            alert("Product name is required");
+            return;
+        }
+
+        if (!form.productCode.trim()) {
+            alert("Product code is required");
+            return;
+        }
+
+        if (!form.brandId) {
+            alert("Please select a brand");
+            return;
+        }
+
+        if (!form.categoryId) {
+            alert("Please select a primary category");
+            return;
+        }
+
+        if (!form.categoryIds.length) {
+            alert("Please assign at least one category");
+            return;
+        }
 
         const payload: ProductFormData = {
             ...form,
-            categoryIds: Array.from(
-                new Set([form.categoryId, ...form.categoryIds])
-            ),
+            categoryIds: Array.from(new Set([form.categoryId, ...form.categoryIds])),
         };
 
         setSaving(true);
 
         try {
-            if (mode === "create") await createProduct(payload);
-            else if (productId) await updateProduct(productId, payload);
+            if (mode === "create") {
+                await createProduct(payload);
+            } else if (productId) {
+                await updateProduct(productId, payload);
+            }
 
             router.push("/dashboard/products");
-        } catch (e: any) {
-            console.error(e);
-            alert(e?.response?.data?.message || "Failed");
+        } catch (error: any) {
+            console.error(error);
+            alert(error?.response?.data?.message || "Failed to save product");
         } finally {
             setSaving(false);
         }
     };
 
-    /**
-     * ✅ VARIANT DEFAULT VALUES UPDATED
-     */
+    const handleDelete = async () => {
+        if (!productId) return;
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${productName}"?`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            await deleteProduct(productId);
+            router.push("/dashboard/products");
+        } catch (error: any) {
+            console.error(error);
+            alert(error?.response?.data?.message || "Failed to delete product");
+        }
+    };
+
     const getVariantDefaults = () => ({
         taxRate: form.taxRate,
         costPrice: form.costPrice,
         wholesaleNet: form.wholesaleNet,
         retailNet: form.retailNet,
-
         isFeatured: form.isFeatured,
         isFreeShipping: form.isFreeShipping,
         isClearance: form.isClearance,
-
         minOrderQuantity: form.minOrderQuantity,
         maxOrderQuantity:
             form.maxOrderQuantity === "" ? undefined : Number(form.maxOrderQuantity),
@@ -281,6 +321,23 @@ export default function ProductFormPage({
         restockTimeDays:
             form.restockTimeDays === "" ? undefined : Number(form.restockTimeDays),
     });
+
+    const handleAddVariant = () => {
+        setEditingVariant(null);
+        setVariantEditorMode("create");
+        setActiveTab("variants");
+    };
+
+    const handleEditVariant = (variant: ProductVariant) => {
+        setEditingVariant(variant);
+        setVariantEditorMode("edit");
+        setActiveTab("variants");
+    };
+
+    const handleCancelVariantEditor = () => {
+        setEditingVariant(null);
+        setVariantEditorMode(null);
+    };
 
     const handleSubmitVariant = async (data: ProductVariantFormData) => {
         if (!productId) return;
@@ -294,62 +351,224 @@ export default function ProductFormPage({
                 await createProductVariant(productId, data);
             }
 
-            setVariantEditorMode(null);
             setEditingVariant(null);
+            setVariantEditorMode(null);
             setVariantRefreshKey((prev) => prev + 1);
             setActiveTab("variants");
-        } catch (e: any) {
-            alert(e?.response?.data?.message || "Variant failed");
+        } catch (error: any) {
+            console.error(error);
+            alert(error?.response?.data?.message || "Failed to save variant");
         } finally {
             setVariantSubmitting(false);
         }
     };
 
-    if (loading) return <div>Loading...</div>;
+    const renderGeneralTab = () => {
+        return (
+            <div className="space-y-6">
+                <ProductForm
+                    form={form}
+                    brands={brands}
+                    categories={categories}
+                    onChange={handleChange}
+                />
+
+                {mode === "edit" && productId ? (
+                    <ProductMediaTab productId={productId} />
+                ) : (
+                    <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
+                        <h4 className="text-lg font-semibold text-textPrimary">
+                            Product Gallery
+                        </h4>
+                        <p className="mt-2 text-textSecondary">
+                            Save the product first before uploading media.
+                        </p>
+                    </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3">
+                    {mode === "edit" && (
+                        <button
+                            type="button"
+                            onClick={handleDelete}
+                            className="rounded-lg border border-red-200 px-4 py-2 text-red-600 transition hover:bg-red-50"
+                        >
+                            Delete
+                        </button>
+                    )}
+
+                    <button
+                        type="button"
+                        onClick={handleCancel}
+                        className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
+                    >
+                        {saving ? "Saving..." : "Save Product"}
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderVariantsTab = () => {
+        if (mode === "create" || !productId) {
+            return (
+                <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
+                    <h4 className="text-lg font-semibold text-textPrimary">
+                        Variants
+                    </h4>
+                    <p className="mt-2 text-textSecondary">
+                        Save the product first before adding variants.
+                    </p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-6">
+                <ProductVariantsTab
+                    key={variantRefreshKey}
+                    productId={productId}
+                    onAddVariant={handleAddVariant}
+                    onEditVariant={handleEditVariant}
+                    defaultValues={{
+                        taxRate: form.taxRate,
+                        costPrice: form.costPrice,
+                        wholesaleNet: form.wholesaleNet,
+                        retailNet: form.retailNet,
+                        stock: 0,
+                        isActive: true,
+                    }}
+                />
+
+                {variantEditorMode ? (
+                    <ProductVariantForm
+                        variant={editingVariant}
+                        defaultValues={getVariantDefaults()}
+                        onSubmit={handleSubmitVariant}
+                        onCancel={handleCancelVariantEditor}
+                        submitting={variantSubmitting}
+                    />
+                ) : null}
+
+                {variantEditorMode === "edit" && editingVariant ? (
+                    <VariantMediaTab variantId={editingVariant.id} />
+                ) : null}
+            </div>
+        );
+    };
+
+    const renderSeoTab = () => {
+        return (
+            <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
+                <h4 className="text-lg font-semibold text-textPrimary">SEO</h4>
+                <p className="mt-2 text-textSecondary">
+                    SEO settings will be added next.
+                </p>
+            </div>
+        );
+    };
+
+    const renderTabContent = () => {
+        if (activeTab === "general") {
+            return renderGeneralTab();
+        }
+
+        if (activeTab === "variants") {
+            return renderVariantsTab();
+        }
+
+        return renderSeoTab();
+    };
+
+    if (loading) {
+        return (
+            <div className="rounded-2xl border border-borderColorCustom bg-card p-6 text-textSecondary">
+                Loading product...
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
-            <ProductForm
-                form={form}
-                brands={brands}
-                categories={categories}
-                onChange={handleChange}
-            />
+            <div className="flex items-center justify-between rounded-2xl border border-borderColorCustom bg-card px-6 py-4">
+                <div>
+                    <div className="text-sm text-textSecondary">Product settings</div>
+                    <h2 className="text-2xl font-semibold text-textPrimary">
+                        {mode === "create" ? "Create Product" : productName}
+                    </h2>
+                </div>
 
-            {mode === "edit" && productId && (
-                <>
-                    <ProductVariantsTab
-                        key={variantRefreshKey}
-                        productId={productId}
-                        onAddVariant={() => setVariantEditorMode("create")}
-                        onEditVariant={(v) => {
-                            setEditingVariant(v);
-                            setVariantEditorMode("edit");
-                        }}
-                        defaultValues={{
-                            ...getVariantDefaults(),
-                            stock: 0,
-                            isActive: true,
-                        }}
-                    />
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={handleCancel}
+                        className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background"
+                    >
+                        Cancel
+                    </button>
 
-                    {variantEditorMode && (
-                        <ProductVariantForm
-                            variant={editingVariant}
-                            defaultValues={getVariantDefaults()}
-                            onSubmit={handleSubmitVariant}
-                            onCancel={() => setVariantEditorMode(null)}
-                            submitting={variantSubmitting}
-                        />
+                    {activeTab === "general" && (
+                        <button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {saving ? "Saving..." : "Save Product"}
+                        </button>
                     )}
+                </div>
+            </div>
 
-                    <ProductMediaTab productId={productId} />
-                </>
-            )}
+            <div className="rounded-2xl border border-borderColorCustom bg-card">
+                <div className="border-b border-borderColorCustom px-6 pt-4">
+                    <div className="flex gap-8">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("general")}
+                            className={`pb-3 text-sm ${activeTab === "general"
+                                    ? "border-b-2 border-primary font-medium text-primary"
+                                    : "text-textSecondary"
+                                }`}
+                        >
+                            General
+                        </button>
 
-            <button onClick={handleSave}>
-                {saving ? "Saving..." : "Save Product"}
-            </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("variants")}
+                            className={`pb-3 text-sm ${activeTab === "variants"
+                                    ? "border-b-2 border-primary font-medium text-primary"
+                                    : "text-textSecondary"
+                                }`}
+                        >
+                            Variants
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("seo")}
+                            className={`pb-3 text-sm ${activeTab === "seo"
+                                    ? "border-b-2 border-primary font-medium text-primary"
+                                    : "text-textSecondary"
+                                }`}
+                        >
+                            SEO
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-6">{renderTabContent()}</div>
+            </div>
         </div>
     );
 }

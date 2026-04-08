@@ -7,12 +7,28 @@ import type { Product } from "@/modules/products/types/product";
 
 export interface ProductListFilters {
     search: string;
-    categoryId: string;
-    productType: "" | "PHYSICAL" | "DIGITAL" | "SERVICE" | "OTHER";
-    isFeatured: "" | "true" | "false";
-    isFreeShipping: "" | "true" | "false";
-    isClearance: "" | "true" | "false";
-    stockState: "" | "in_stock" | "low_stock" | "out_of_stock";
+
+    categoryIds: string[];
+    brandIds: string[];
+
+    status: "active" | "inactive" | "all";
+    flags: Array<"featured" | "free_shipping" | "clearance">;
+
+    stockStatus: "" | "in_stock" | "low_stock" | "out_of_stock";
+    imageStatus: "" | "with_image" | "without_image";
+
+    productTypes: Array<"PHYSICAL" | "DIGITAL" | "SERVICE" | "OTHER">;
+
+    createdPreset: "" | "today" | "last_day" | "last_week" | "last_month" | "last_year";
+    createdFrom: string;
+    createdTo: string;
+
+    priceFrom: string;
+    priceTo: string;
+
+    salesFrom: string;
+    salesTo: string;
+
     sortBy: "createdAt" | "name" | "productCode";
     order: "asc" | "desc";
     limit: number;
@@ -29,44 +45,80 @@ interface ProductState {
 
     fetchProducts: (overrides?: Partial<ProductListParams>) => Promise<void>;
     setPage: (page: number) => Promise<void>;
+    setLimit: (limit: number) => Promise<void>;
     setSearch: (search: string) => void;
-    setCategoryId: (categoryId: string) => Promise<void>;
-    setProductType: (productType: ProductListFilters["productType"]) => Promise<void>;
-    setFeaturedFilter: (value: ProductListFilters["isFeatured"]) => Promise<void>;
-    setFreeShippingFilter: (
-        value: ProductListFilters["isFreeShipping"]
-    ) => Promise<void>;
-    setClearanceFilter: (
-        value: ProductListFilters["isClearance"]
-    ) => Promise<void>;
-    setStockState: (stockState: ProductListFilters["stockState"]) => Promise<void>;
     setSort: (
         sortBy: "createdAt" | "name" | "productCode",
         order: "asc" | "desc"
     ) => Promise<void>;
-    setLimit: (limit: number) => Promise<void>;
-    applySearch: () => Promise<void>;
+    applyFilters: (nextFilters: Partial<ProductListFilters>) => Promise<void>;
+    removeFilterChip: (key: string, value?: string) => Promise<void>;
     resetFilters: () => Promise<void>;
     clearError: () => void;
 }
 
 const defaultFilters: ProductListFilters = {
     search: "",
-    categoryId: "",
-    productType: "",
-    isFeatured: "",
-    isFreeShipping: "",
-    isClearance: "",
-    stockState: "",
+    categoryIds: [],
+    brandIds: [],
+    status: "active",
+    flags: [],
+    stockStatus: "",
+    imageStatus: "",
+    productTypes: [],
+    createdPreset: "",
+    createdFrom: "",
+    createdTo: "",
+    priceFrom: "",
+    priceTo: "",
+    salesFrom: "",
+    salesTo: "",
     sortBy: "createdAt",
     order: "desc",
     limit: 10,
 };
 
-function parseBooleanFilter(value: "" | "true" | "false"): boolean | undefined {
-    if (value === "true") return true;
-    if (value === "false") return false;
-    return undefined;
+function toNumberOrUndefined(value: string): number | undefined {
+    if (value === "") return undefined;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function buildParams(
+    page: number,
+    filters: ProductListFilters,
+    overrides: Partial<ProductListParams> = {}
+): ProductListParams {
+    return {
+        page,
+        limit: filters.limit,
+        search: filters.search || undefined,
+
+        categoryIds: filters.categoryIds.length ? filters.categoryIds : undefined,
+        brandIds: filters.brandIds.length ? filters.brandIds : undefined,
+
+        status: filters.status,
+        flags: filters.flags.length ? filters.flags : undefined,
+
+        stockStatus: filters.stockStatus || undefined,
+        imageStatus: filters.imageStatus || undefined,
+
+        productTypes: filters.productTypes.length ? filters.productTypes : undefined,
+
+        createdPreset: filters.createdPreset || undefined,
+        createdFrom: filters.createdFrom || undefined,
+        createdTo: filters.createdTo || undefined,
+
+        priceFrom: toNumberOrUndefined(filters.priceFrom),
+        priceTo: toNumberOrUndefined(filters.priceTo),
+
+        salesFrom: toNumberOrUndefined(filters.salesFrom),
+        salesTo: toNumberOrUndefined(filters.salesTo),
+
+        sortBy: filters.sortBy,
+        order: filters.order,
+        ...overrides,
+    };
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
@@ -81,28 +133,13 @@ export const useProductStore = create<ProductState>((set, get) => ({
     fetchProducts: async (overrides = {}) => {
         const { page, filters } = get();
 
-        const params: ProductListParams = {
-            page,
-            limit: filters.limit,
-            search: filters.search || undefined,
-            categoryId: filters.categoryId || undefined,
-            productType: filters.productType || undefined,
-            isFeatured: parseBooleanFilter(filters.isFeatured),
-            isFreeShipping: parseBooleanFilter(filters.isFreeShipping),
-            isClearance: parseBooleanFilter(filters.isClearance),
-            stockState: filters.stockState || undefined,
-            sortBy: filters.sortBy,
-            order: filters.order,
-            ...overrides,
-        };
-
         try {
             set({
                 loading: true,
                 error: null,
             });
 
-            const response = await getProducts(params);
+            const response = await getProducts(buildParams(page, filters, overrides));
 
             set({
                 products: response.data ?? [],
@@ -124,6 +161,18 @@ export const useProductStore = create<ProductState>((set, get) => ({
         await get().fetchProducts({ page });
     },
 
+    setLimit: async (limit) => {
+        set((state) => ({
+            page: 1,
+            filters: {
+                ...state.filters,
+                limit,
+            },
+        }));
+
+        await get().fetchProducts({ page: 1, limit });
+    },
+
     setSearch: (search) => {
         set((state) => ({
             filters: {
@@ -131,93 +180,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
                 search,
             },
         }));
-    },
-
-    setCategoryId: async (categoryId) => {
-        set((state) => ({
-            page: 1,
-            filters: {
-                ...state.filters,
-                categoryId,
-            },
-        }));
-
-        await get().fetchProducts({ page: 1, categoryId: categoryId || undefined });
-    },
-
-    setProductType: async (productType) => {
-        set((state) => ({
-            page: 1,
-            filters: {
-                ...state.filters,
-                productType,
-            },
-        }));
-
-        await get().fetchProducts({
-            page: 1,
-            productType: productType || undefined,
-        });
-    },
-
-    setFeaturedFilter: async (value) => {
-        set((state) => ({
-            page: 1,
-            filters: {
-                ...state.filters,
-                isFeatured: value,
-            },
-        }));
-
-        await get().fetchProducts({
-            page: 1,
-            isFeatured: parseBooleanFilter(value),
-        });
-    },
-
-    setFreeShippingFilter: async (value) => {
-        set((state) => ({
-            page: 1,
-            filters: {
-                ...state.filters,
-                isFreeShipping: value,
-            },
-        }));
-
-        await get().fetchProducts({
-            page: 1,
-            isFreeShipping: parseBooleanFilter(value),
-        });
-    },
-
-    setClearanceFilter: async (value) => {
-        set((state) => ({
-            page: 1,
-            filters: {
-                ...state.filters,
-                isClearance: value,
-            },
-        }));
-
-        await get().fetchProducts({
-            page: 1,
-            isClearance: parseBooleanFilter(value),
-        });
-    },
-
-    setStockState: async (stockState) => {
-        set((state) => ({
-            page: 1,
-            filters: {
-                ...state.filters,
-                stockState,
-            },
-        }));
-
-        await get().fetchProducts({
-            page: 1,
-            stockState: stockState || undefined,
-        });
     },
 
     setSort: async (sortBy, order) => {
@@ -237,20 +199,57 @@ export const useProductStore = create<ProductState>((set, get) => ({
         });
     },
 
-    setLimit: async (limit) => {
+    applyFilters: async (nextFilters) => {
         set((state) => ({
             page: 1,
             filters: {
                 ...state.filters,
-                limit,
+                ...nextFilters,
             },
         }));
 
-        await get().fetchProducts({ page: 1, limit });
+        await get().fetchProducts({ page: 1 });
     },
 
-    applySearch: async () => {
-        set({ page: 1 });
+    removeFilterChip: async (key, value) => {
+        set((state) => {
+            const next = { ...state.filters };
+
+            if (key === "categoryIds") {
+                next.categoryIds = next.categoryIds.filter((item) => item !== value);
+            } else if (key === "brandIds") {
+                next.brandIds = next.brandIds.filter((item) => item !== value);
+            } else if (key === "flags") {
+                next.flags = next.flags.filter((item) => item !== value);
+            } else if (key === "productTypes") {
+                next.productTypes = next.productTypes.filter((item) => item !== value);
+            } else if (key === "status") {
+                next.status = "active";
+            } else if (key === "stockStatus") {
+                next.stockStatus = "";
+            } else if (key === "imageStatus") {
+                next.imageStatus = "";
+            } else if (key === "createdPreset") {
+                next.createdPreset = "";
+            } else if (key === "createdRange") {
+                next.createdFrom = "";
+                next.createdTo = "";
+            } else if (key === "priceRange") {
+                next.priceFrom = "";
+                next.priceTo = "";
+            } else if (key === "salesRange") {
+                next.salesFrom = "";
+                next.salesTo = "";
+            } else if (key === "search") {
+                next.search = "";
+            }
+
+            return {
+                page: 1,
+                filters: next,
+            };
+        });
+
         await get().fetchProducts({ page: 1 });
     },
 
@@ -265,13 +264,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
             limit: defaultFilters.limit,
             sortBy: defaultFilters.sortBy,
             order: defaultFilters.order,
-            search: undefined,
-            categoryId: undefined,
-            productType: undefined,
-            isFeatured: undefined,
-            isFreeShipping: undefined,
-            isClearance: undefined,
-            stockState: undefined,
         });
     },
 

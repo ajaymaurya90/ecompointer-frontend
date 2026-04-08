@@ -21,12 +21,28 @@ export interface ProductListParams {
     page?: number;
     limit?: number;
     search?: string;
-    categoryId?: string;
-    productType?: "PHYSICAL" | "DIGITAL" | "SERVICE" | "OTHER";
-    isFeatured?: boolean;
-    isFreeShipping?: boolean;
-    isClearance?: boolean;
-    stockState?: "in_stock" | "low_stock" | "out_of_stock";
+
+    categoryIds?: string[];
+    brandIds?: string[];
+
+    status?: "active" | "inactive" | "all";
+    flags?: Array<"featured" | "free_shipping" | "clearance">;
+
+    stockStatus?: "in_stock" | "low_stock" | "out_of_stock";
+    imageStatus?: "with_image" | "without_image";
+
+    productTypes?: Array<"PHYSICAL" | "DIGITAL" | "SERVICE" | "OTHER">;
+
+    createdPreset?: "today" | "last_day" | "last_week" | "last_month" | "last_year";
+    createdFrom?: string;
+    createdTo?: string;
+
+    priceFrom?: number;
+    priceTo?: number;
+
+    salesFrom?: number;
+    salesTo?: number;
+
     sortBy?: "createdAt" | "name" | "productCode";
     order?: "asc" | "desc";
 }
@@ -35,7 +51,13 @@ export async function getProducts(
     params: ProductListParams = {}
 ): Promise<ProductListResponse> {
     const response = await api.get("/products", {
-        params,
+        params: {
+            ...params,
+            categoryIds: params.categoryIds?.join(","),
+            brandIds: params.brandIds?.join(","),
+            productTypes: params.productTypes?.join(","),
+            flags: params.flags?.join(","),
+        },
     });
 
     return response.data;
@@ -143,7 +165,6 @@ export async function reorderProductMedia(
     return response.data;
 }
 
-// Convert flat category list into nested tree for Shopware-style selector.
 function buildCategoryTree(categories: any[]): ProductOption[] {
     const normalized = categories.map((item) => ({
         id: item.id,
