@@ -4,58 +4,129 @@
 :root {
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
-  --bg-card-muted: #f1f5f9;
-  --bg-sidebar: #2a2a2a;
-  --bg-topbar: #ffffff;
+  --bg-card-muted: #f0f0f0;
+  --bg-elevated: #ffffff;
+  --bg-sidebar: #1f1f1f;
+  --bg-topbar: #f0f0f0;
   --bg-input: #ffffff;
+  --bg-overlay: rgba(15, 23, 42, 0.45);
+
+  --bg-table-header: #f0f0f0;
+  --bg-table-footer: #f0f0f0;
+  --bg-table-row-hover: #f6f6f6;
+  --bg-table-row-selected: #eef4ff;
+  --bg-disabled: #eef2f7;
 
   --border-color: #d6dde8;
   --border-soft: #e5ebf3;
+  --border-strong: #c2ccda;
+  --border-focus: #2563eb;
 
   --color-primary: #2563eb;
   --color-primary-hover: #1d4ed8;
 
+  --color-success: #15803d;
+  --color-success-soft: #dcfce7;
+  --color-warning: #b45309;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #b91c1c;
+  --color-danger-soft: #fee2e2;
+  --color-info: #1d4ed8;
+  --color-info-soft: #dbeafe;
+
   --text-primary: #111827;
   --text-secondary: #6b7280;
+  --text-muted: #94a3b8;
+  --text-disabled: #9ca3af;
+  --text-inverse: #ffffff;
   --text-sidebar: #f9fafb;
-  --text-sidebar-muted: #9ca3af;
+  --text-sidebar-muted: #a1a1aa;
 
   --sidebar-hover: rgba(255, 255, 255, 0.08);
-  --sidebar-active: rgba(255, 255, 255, 0.12);
+  --sidebar-active: rgba(255, 255, 255, 0.14);
 
   --shadow-card: 0 2px 8px rgba(15, 23, 42, 0.05), 0 16px 36px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 10px 24px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 20px 48px rgba(15, 23, 42, 0.16);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --duration-fast: 160ms;
+  --duration-base: 220ms;
 }
 
 /* dark mode */
 html.dark {
-  --bg-main: #212121;
-  --bg-card: #2a2a2a;
-  --bg-card-muted: #303030;
-  --bg-sidebar: #171717;
-  --bg-topbar: #1f1f1f;
-  --bg-input: #2a2a2a;
+  --bg-main: #18181b;
+  --bg-card: #232326;
+  --bg-card-muted: #2b2b30;
+  --bg-elevated: #2f2f35;
+  --bg-sidebar: #111114;
+  --bg-topbar: #1a1a1d;
+  --bg-input: #26262b;
+  --bg-overlay: rgba(0, 0, 0, 0.55);
 
-  --border-color: #2f2f2f;
-  --border-soft: #262626;
+  --bg-table-header: #2c2c31;
+  --bg-table-footer: #2a2a2f;
+  --bg-table-row-hover: #f3f3f4;
+  --bg-table-row-selected: #21314d;
+  --bg-disabled: #2b2b2f;
+
+  --border-color: #313138;
+  --border-soft: #2a2a31;
+  --border-strong: #41414a;
+  --border-focus: #60a5fa;
 
   --color-primary: #3b82f6;
   --color-primary-hover: #60a5fa;
 
+  --color-success: #4ade80;
+  --color-success-soft: rgba(74, 222, 128, 0.14);
+  --color-warning: #fbbf24;
+  --color-warning-soft: rgba(251, 191, 36, 0.14);
+  --color-danger: #f87171;
+  --color-danger-soft: rgba(248, 113, 113, 0.14);
+  --color-info: #60a5fa;
+  --color-info-soft: rgba(96, 165, 250, 0.14);
+
   --text-primary: #f5f5f5;
-  --text-secondary: #b4b4b4;
+  --text-secondary: #b4b4b8;
+  --text-muted: #8b8b92;
+  --text-disabled: #6b7280;
+  --text-inverse: #ffffff;
   --text-sidebar: #fafafa;
   --text-sidebar-muted: #9ca3af;
 
   --sidebar-hover: rgba(255, 255, 255, 0.06);
   --sidebar-active: rgba(255, 255, 255, 0.10);
 
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.2), 0 16px 36px rgba(0, 0, 0, 0.24);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.28), 0 20px 40px rgba(0, 0, 0, 0.24);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.32);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --duration-fast: 160ms;
+  --duration-base: 220ms;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
   background: var(--bg-main);
   color: var(--text-primary);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 /* explicit surface utilities */
@@ -66,7 +137,7 @@ body {
 .app-sidebar {
   background-color: var(--bg-sidebar);
   color: var(--text-sidebar);
-  border-right: 1px solid var(--border-soft);
+  border-right: 1px solid var(--border-strong);
 }
 
 .app-topbar {
@@ -83,7 +154,7 @@ body {
 .app-input {
   background-color: var(--bg-input);
   border: 1px solid var(--border-soft);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-sm);
 }
 
 .app-muted-surface {
@@ -108,46 +179,53 @@ body {
 
 /* interactive effects */
 .interactive-card {
-  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
 }
 
 .interactive-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.14), var(--shadow-card);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.interactive-button {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.interactive-button:hover {
+  transform: translateY(-1px);
 }
 
 .interactive-button:active {
   transform: scale(0.97);
 }
 
-html.dark .interactive-card:hover {
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32), var(--shadow-card);
-}
-
 .interactive-menu {
-  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .interactive-menu:hover {
   transform: translateX(3px);
 }
 
-.interactive-button {
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
-}
-
-.interactive-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.10);
-}
-
-html.dark .interactive-button:hover {
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
-}
-
 .sidebar-nav-item {
   position: relative;
-  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .sidebar-nav-item:hover {
@@ -159,20 +237,50 @@ html.dark .interactive-button:hover {
 .sidebar-nav-item.active {
   background-color: var(--sidebar-active);
   color: var(--text-sidebar);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 6px 18px rgba(0, 0, 0, 0.10);
 }
 
 .submenu-item {
+  border-radius: 16px;
   transition: background-color 160ms ease, color 160ms ease;
 }
 
 .submenu-item:hover {
-  background-color: var(--bg-card-muted);
-  color: var(--text-primary);
+  background-color: var(--sidebar-hover) !important;
+  color: var(--text-sidebar);
 }
 
 .submenu-item.active {
+  background-color: var(--sidebar-active);
+  color: var(--text-sidebar);
+}
+
+/* css variables for data tables */
+.table-header {
+  background-color: var(--bg-table-header);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.table-footer {
+  background-color: var(--bg-table-footer);
+  border-top: 1px solid var(--border-soft);
+}
+
+.table-row {
+  transition: background-color 150ms ease;
+}
+
+.table-row:hover {
+  background-color: var(--bg-table-row-hover);
+}
+
+.table-row td {
+  padding: 3px 5px;
+  font-size: 14px;
+}
+
+.bg-cardMuted {
   background-color: var(--bg-card-muted);
-  color: var(--text-primary);
 }

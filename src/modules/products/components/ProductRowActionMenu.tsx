@@ -21,71 +21,66 @@ export default function ProductRowActionMenu({
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (
-                rootRef.current &&
-                !rootRef.current.contains(event.target as Node)
-            ) {
+            if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
                 setOpen(false);
             }
         };
 
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
     }, []);
+
+    const handleAction = (callback: () => void) => {
+        setOpen(false);
+        callback();
+    };
 
     return (
         <div ref={rootRef} className="relative inline-block text-left">
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
-                className="rounded-lg p-2 text-textSecondary transition hover:bg-background hover:text-textPrimary"
+                className="interactive-button inline-flex h-9 w-9 items-center justify-center rounded-xl text-textSecondary transition hover:bg-cardMuted hover:text-textPrimary"
                 aria-label="Open product actions"
             >
                 <MoreVertical size={18} />
             </button>
 
             {open ? (
-                <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-xl border border-borderColorCustom bg-white shadow-lg">
+                <div className="absolute right-0 z-30 mt-2 w-48 overflow-hidden rounded-xl border border-borderSoft bg-card shadow-md">
                     <button
                         type="button"
-                        onClick={() => {
-                            setOpen(false);
-                            onEdit();
-                        }}
-                        className="block w-full px-4 py-3 text-left text-sm text-textPrimary transition hover:bg-background"
+                        onClick={() => handleAction(onEdit)}
+                        className="block w-full px-4 py-3 text-left text-sm text-textPrimary transition hover:bg-cardMuted"
                     >
                         Edit
                     </button>
 
                     <button
                         type="button"
-                        onClick={() => {
-                            setOpen(false);
-                            onDuplicate();
-                        }}
-                        className="block w-full px-4 py-3 text-left text-sm text-textPrimary transition hover:bg-background"
+                        onClick={() => handleAction(onDuplicate)}
+                        className="block w-full px-4 py-3 text-left text-sm text-textPrimary transition hover:bg-cardMuted"
                     >
                         Duplicate
                     </button>
 
                     <button
                         type="button"
-                        onClick={() => {
-                            setOpen(false);
-                            onShowVariants();
-                        }}
-                        className="block w-full px-4 py-3 text-left text-sm text-textPrimary transition hover:bg-background"
+                        onClick={() => handleAction(onShowVariants)}
+                        className="block w-full px-4 py-3 text-left text-sm text-textPrimary transition hover:bg-cardMuted"
                     >
                         Show Variants
                     </button>
 
+                    <div className="border-t border-borderSoft" />
+
                     <button
                         type="button"
-                        onClick={() => {
-                            setOpen(false);
-                            onDelete();
-                        }}
-                        className="block w-full px-4 py-3 text-left text-sm text-red-600 transition hover:bg-red-50"
+                        onClick={() => handleAction(onDelete)}
+                        className="block w-full px-4 py-3 text-left text-sm text-danger transition hover:bg-dangerSoft"
                     >
                         Delete
                     </button>

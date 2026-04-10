@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Plus, RotateCcw, SlidersHorizontal } from "lucide-react";
+
 import ProductListTable from "@/modules/products/components/ProductListTable";
+import ProductFilterModal from "@/modules/products/components/ProductFilterModal";
 import { useProductStore } from "@/modules/products/store/productStore";
 import type { Product, ProductOption } from "@/modules/products/types/product";
 import {
@@ -10,9 +13,11 @@ import {
     getProductBrands,
     getProductCategories,
 } from "@/modules/products/api/productApi";
-import { RotateCcw, Plus, SlidersHorizontal } from "lucide-react";
+
+import Button from "@/components/ui/Button";
 import FilterChip from "@/components/ui/FilterChip";
-import ProductFilterModal from "@/modules/products/components/ProductFilterModal";
+import PageShell from "@/components/layout/PageShell";
+import DataPanel from "@/components/layout/DataPanel";
 
 export default function ProductsPageContainer() {
     const router = useRouter();
@@ -51,8 +56,8 @@ export default function ProductsPageContainer() {
 
             setCategories(categoryOptions);
             setBrands(brandOptions);
-        } catch (error) {
-            console.error("Failed to fetch filter options", error);
+        } catch (loadError) {
+            console.error("Failed to fetch filter options", loadError);
         }
     };
 
@@ -78,8 +83,8 @@ export default function ProductsPageContainer() {
         try {
             await deleteProduct(product.id);
             await fetchProducts();
-        } catch (error) {
-            console.error(error);
+        } catch (deleteError) {
+            console.error(deleteError);
             alert("Failed to delete product");
         }
     };
@@ -99,149 +104,210 @@ export default function ProductsPageContainer() {
         const visit = (items: ProductOption[]) => {
             items.forEach((item) => {
                 map.set(item.id, item.name);
-                if (item.children?.length) visit(item.children);
+
+                if (item.children?.length) {
+                    visit(item.children);
+                }
             });
         };
 
         visit(categories);
+
         return map;
     }, [categories]);
 
     const brandNameMap = useMemo(() => {
         const map = new Map<string, string>();
-        brands.forEach((brand) => map.set(brand.id, brand.name));
+
+        brands.forEach((brand) => {
+            map.set(brand.id, brand.name);
+        });
+
         return map;
     }, [brands]);
 
-    return (
-        <div className="space-y-4">
-            <div className="flex flex-col gap-4 bg-card p-2 xl:flex-row xl:items-start xl:justify-between">
-                <div className="space-y-2">
-                    <h2 className="text-2xl font-semibold text-textPrimary">
-                        Products ({total})
-                    </h2>
+    const hasActiveFilters =
+        filters.categoryIds.length > 0 ||
+        filters.brandIds.length > 0 ||
+        filters.status !== "active" ||
+        filters.flags.length > 0 ||
+        Boolean(filters.stockStatus) ||
+        Boolean(filters.imageStatus) ||
+        filters.productTypes.length > 0 ||
+        Boolean(filters.createdPreset) ||
+        Boolean(filters.createdFrom || filters.createdTo) ||
+        Boolean(filters.priceFrom || filters.priceTo) ||
+        Boolean(filters.salesFrom || filters.salesTo);
 
-                    <div className="flex flex-wrap gap-2">
-                        {filters.categoryIds.map((id) => (
-                            <FilterChip
-                                key={`category-${id}`}
-                                label={`Category: ${categoryNameMap.get(id) || "Selected"}`}
-                                onRemove={() => void removeFilterChip("categoryIds", id)}
-                            />
-                        ))}
+    const panelHeaderActions = (
+        <>
+            <Button
+                variant="ghost"
+                leftIcon={<SlidersHorizontal size={16} />}
+                onClick={() => setFilterOpen(true)}
+            >
+                Filters
+            </Button>
 
-                        {filters.brandIds.map((id) => (
-                            <FilterChip
-                                key={`brand-${id}`}
-                                label={`Brand: ${brandNameMap.get(id) || "Selected"}`}
-                                onRemove={() => void removeFilterChip("brandIds", id)}
-                            />
-                        ))}
+            <Button
+                variant="secondary"
+                leftIcon={<RotateCcw size={16} />}
+                onClick={() => void resetFilters()}
+            >
+                Reset
+            </Button>
 
-                        {filters.status !== "active" && (
-                            <FilterChip
-                                label={`Status: ${filters.status}`}
-                                onRemove={() => void removeFilterChip("status")}
-                            />
-                        )}
+            <Button
+                variant="primary"
+                leftIcon={<Plus size={16} />}
+                onClick={handleAddProduct}
+            >
+                Add Product
+            </Button>
+        </>
+    );
 
-                        {filters.flags.map((flag) => (
-                            <FilterChip
-                                key={`flag-${flag}`}
-                                label={`Flag: ${flag}`}
-                                onRemove={() => void removeFilterChip("flags", flag)}
-                            />
-                        ))}
+    const panelFooter = (
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-4">
+                <select
+                    value={filters.limit}
+                    onChange={(e) => void setLimit(Number(e.target.value))}
+                    className="h-11 rounded-md border border-borderSoft bg-inputBg px-3 text-sm text-textPrimary outline-none transition focus:border-borderFocus"
+                >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                </select>
 
-                        {filters.stockStatus && (
-                            <FilterChip
-                                label={`Stock: ${filters.stockStatus}`}
-                                onRemove={() => void removeFilterChip("stockStatus")}
-                            />
-                        )}
-
-                        {filters.imageStatus && (
-                            <FilterChip
-                                label={`Image: ${filters.imageStatus}`}
-                                onRemove={() => void removeFilterChip("imageStatus")}
-                            />
-                        )}
-
-                        {filters.productTypes.map((type) => (
-                            <FilterChip
-                                key={`type-${type}`}
-                                label={`Type: ${type}`}
-                                onRemove={() => void removeFilterChip("productTypes", type)}
-                            />
-                        ))}
-
-                        {filters.createdPreset && (
-                            <FilterChip
-                                label={`Created: ${filters.createdPreset}`}
-                                onRemove={() => void removeFilterChip("createdPreset")}
-                            />
-                        )}
-
-                        {(filters.createdFrom || filters.createdTo) && (
-                            <FilterChip
-                                label="Created range"
-                                onRemove={() => void removeFilterChip("createdRange")}
-                            />
-                        )}
-
-                        {(filters.priceFrom || filters.priceTo) && (
-                            <FilterChip
-                                label="Price range"
-                                onRemove={() => void removeFilterChip("priceRange")}
-                            />
-                        )}
-
-                        {(filters.salesFrom || filters.salesTo) && (
-                            <FilterChip
-                                label="Sales range"
-                                onRemove={() => void removeFilterChip("salesRange")}
-                            />
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setFilterOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-lg px-4 py-2 hover:bg-slate-300"
-                    >
-                        <SlidersHorizontal size={16} />
-                        Filters
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => void resetFilters()}
-                        className="inline-flex items-center gap-2 rounded-lg px-4 py-2 hover:bg-slate-300"
-                    >
-                        <RotateCcw size={16} />
-                        Reset
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={handleAddProduct}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                    >
-                        <Plus size={16} />
-                        Add Product
-                    </button>
-                </div>
+                <span className="text-sm text-textSecondary">{pageSummary}</span>
             </div>
 
+            <div className="flex items-center gap-3">
+                <Button
+                    variant="secondary"
+                    onClick={() => void setPage(page - 1)}
+                    disabled={page <= 1}
+                >
+                    Prev
+                </Button>
+
+                <span className="text-sm font-medium text-textPrimary">
+                    Page {page} of {lastPage}
+                </span>
+
+                <Button
+                    variant="secondary"
+                    onClick={() => void setPage(page + 1)}
+                    disabled={page >= lastPage}
+                >
+                    Next
+                </Button>
+            </div>
+        </div>
+    );
+
+    return (
+        <PageShell>
             {error ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-600">
+                <div className="rounded-lg border border-danger bg-dangerSoft px-4 py-3 text-sm text-danger">
                     {error}
                 </div>
             ) : null}
 
-            <div className="overflow-hidden rounded-2xl bg-card">
+            <DataPanel
+                title={`Product List (${total})`}
+                description="Manage your catalog, inventory visibility, and product structure."
+                headerContent={panelHeaderActions}
+                footer={panelFooter}
+            >
+                {hasActiveFilters ? (
+                    <div className="bg-cardMuted px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                            {filters.categoryIds.map((id) => (
+                                <FilterChip
+                                    key={`category-${id}`}
+                                    label={`Category: ${categoryNameMap.get(id) || "Selected"}`}
+                                    onRemove={() => void removeFilterChip("categoryIds", id)}
+                                />
+                            ))}
+
+                            {filters.brandIds.map((id) => (
+                                <FilterChip
+                                    key={`brand-${id}`}
+                                    label={`Brand: ${brandNameMap.get(id) || "Selected"}`}
+                                    onRemove={() => void removeFilterChip("brandIds", id)}
+                                />
+                            ))}
+
+                            {filters.status !== "active" && (
+                                <FilterChip
+                                    label={`Status: ${filters.status}`}
+                                    onRemove={() => void removeFilterChip("status")}
+                                />
+                            )}
+
+                            {filters.flags.map((flag) => (
+                                <FilterChip
+                                    key={`flag-${flag}`}
+                                    label={`Flag: ${flag}`}
+                                    onRemove={() => void removeFilterChip("flags", flag)}
+                                />
+                            ))}
+
+                            {filters.stockStatus && (
+                                <FilterChip
+                                    label={`Stock: ${filters.stockStatus}`}
+                                    onRemove={() => void removeFilterChip("stockStatus")}
+                                />
+                            )}
+
+                            {filters.imageStatus && (
+                                <FilterChip
+                                    label={`Image: ${filters.imageStatus}`}
+                                    onRemove={() => void removeFilterChip("imageStatus")}
+                                />
+                            )}
+
+                            {filters.productTypes.map((type) => (
+                                <FilterChip
+                                    key={`type-${type}`}
+                                    label={`Type: ${type}`}
+                                    onRemove={() => void removeFilterChip("productTypes", type)}
+                                />
+                            ))}
+
+                            {filters.createdPreset && (
+                                <FilterChip
+                                    label={`Created: ${filters.createdPreset}`}
+                                    onRemove={() => void removeFilterChip("createdPreset")}
+                                />
+                            )}
+
+                            {(filters.createdFrom || filters.createdTo) && (
+                                <FilterChip
+                                    label="Created range"
+                                    onRemove={() => void removeFilterChip("createdRange")}
+                                />
+                            )}
+
+                            {(filters.priceFrom || filters.priceTo) && (
+                                <FilterChip
+                                    label="Price range"
+                                    onRemove={() => void removeFilterChip("priceRange")}
+                                />
+                            )}
+
+                            {(filters.salesFrom || filters.salesTo) && (
+                                <FilterChip
+                                    label="Sales range"
+                                    onRemove={() => void removeFilterChip("salesRange")}
+                                />
+                            )}
+                        </div>
+                    </div>
+                ) : null}
+
                 <ProductListTable
                     products={products}
                     loading={loading}
@@ -249,45 +315,7 @@ export default function ProductsPageContainer() {
                     onShowVariants={handleShowVariants}
                     onDelete={handleDeleteProduct}
                 />
-
-                <div className="flex items-center justify-between border-t border-slate-300 bg-slate-200 px-6 py-2">
-                    <div className="flex items-center gap-4">
-                        <select
-                            value={filters.limit}
-                            onChange={(e) => void setLimit(Number(e.target.value))}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-2"
-                        >
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
-                        </select>
-
-                        <span className="text-sm text-textSecondary">{pageSummary}</span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => void setPage(page - 1)}
-                            disabled={page <= 1}
-                            className="rounded-lg border border-slate-300 bg-white px-4 py-2 transition hover:bg-slate-50 disabled:opacity-50"
-                        >
-                            Prev
-                        </button>
-
-                        <span className="text-sm text-textPrimary">
-                            Page {page} of {lastPage}
-                        </span>
-
-                        <button
-                            onClick={() => void setPage(page + 1)}
-                            disabled={page >= lastPage}
-                            className="rounded-lg border border-slate-300 bg-white px-4 py-2 transition hover:bg-slate-50 disabled:opacity-50"
-                        >
-                            Next
-                        </button>
-                    </div>
-                </div>
-            </div>
+            </DataPanel>
 
             <ProductFilterModal
                 open={filterOpen}
@@ -298,6 +326,6 @@ export default function ProductsPageContainer() {
                 brands={brands}
                 initialFilters={filters}
             />
-        </div>
+        </PageShell>
     );
 }
