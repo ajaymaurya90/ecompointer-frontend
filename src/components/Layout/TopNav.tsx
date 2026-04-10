@@ -53,7 +53,7 @@ const TopNav = () => {
             </div>
 
             <div className="flex-1">
-                <div className="app-input flex items-center gap-3 rounded-2xl px-4 py-3">
+                <div className="app-input flex items-center gap-3 rounded-2xl px-2 py-1">
                     <div className="flex items-center gap-2 rounded-xl bg-cardMuted px-3 py-2 text-sm text-textPrimary">
                         <span>All</span>
                         <ChevronDown size={16} className="text-textSecondary" />
@@ -88,7 +88,7 @@ const TopNav = () => {
                 </button>
 
                 <div className="flex items-center gap-3 pl-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cardMuted text-textSecondary">
+                    <div className="interactive-button app-card relative flex h-11 w-11 items-center justify-center rounded-2xl text-textSecondary">
                         <User size={16} />
                     </div>
 

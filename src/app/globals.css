@@ -1,5 +1,64 @@
 @import "tailwindcss";
 
+/* Tailwind v4 theme mapping */
+@theme inline {
+  /* colors */
+  --color-background: var(--bg-main);
+  --color-card: var(--bg-card);
+  --color-cardMuted: var(--bg-card-muted);
+  --color-elevated: var(--bg-elevated);
+  --color-sidebar: var(--bg-sidebar);
+  --color-topbar: var(--bg-topbar);
+  --color-inputBg: var(--bg-input);
+  --color-overlay: var(--bg-overlay);
+
+  --color-tableHeader: var(--bg-table-header);
+  --color-tableFooter: var(--bg-table-footer);
+  --color-tableRowHover: var(--bg-table-row-hover);
+  --color-tableRowSelected: var(--bg-table-row-selected);
+  --color-disabledBg: var(--bg-disabled);
+
+  --color-borderColorCustom: var(--border-color);
+  --color-borderSoft: var(--border-soft);
+  --color-borderStrong: var(--border-strong);
+  --color-borderFocus: var(--border-focus);
+
+  --color-primary: var(--color-primary);
+  --color-primaryHover: var(--color-primary-hover);
+
+  --color-success: var(--color-success);
+  --color-successSoft: var(--color-success-soft);
+  --color-warning: var(--color-warning);
+  --color-warningSoft: var(--color-warning-soft);
+  --color-danger: var(--color-danger);
+  --color-dangerSoft: var(--color-danger-soft);
+  --color-info: var(--color-info);
+  --color-infoSoft: var(--color-info-soft);
+
+  --color-textPrimary: var(--text-primary);
+  --color-textSecondary: var(--text-secondary);
+  --color-textMuted: var(--text-muted);
+  --color-textDisabled: var(--text-disabled);
+  --color-textInverse: var(--text-inverse);
+  --color-textSidebar: var(--text-sidebar);
+  --color-textSidebarMuted: var(--text-sidebar-muted);
+
+  --color-sidebarActive: var(--sidebar-active);
+  --color-sidebarHover: var(--sidebar-hover);
+
+  /* shadows */
+  --shadow-card: var(--shadow-card);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* radius */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}
+
 /* light mode */
 :root {
   --bg-main: #f8fafc;
@@ -72,7 +131,7 @@ html.dark {
 
   --bg-table-header: #2c2c31;
   --bg-table-footer: #2a2a2f;
-  --bg-table-row-hover: #f3f3f4;
+  --bg-table-row-hover: #30343a;
   --bg-table-row-selected: #21314d;
   --bg-disabled: #2b2b2f;
 
@@ -177,6 +236,41 @@ body {
   color: var(--text-sidebar-muted);
 }
 
+/* semantic status utilities */
+.status-dot-active {
+  background-color: var(--color-success);
+}
+
+.status-dot-inactive {
+  background-color: var(--text-muted);
+}
+
+.stock-badge {
+  display: inline-flex;
+  min-width: 56px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stock-badge--danger {
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.stock-badge--warning {
+  background-color: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.stock-badge--success {
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+}
+
 /* interactive effects */
 .interactive-card {
   transition:
@@ -274,13 +368,4 @@ body {
 
 .table-row:hover {
   background-color: var(--bg-table-row-hover);
-}
-
-.table-row td {
-  padding: 3px 5px;
-  font-size: 14px;
-}
-
-.bg-cardMuted {
-  background-color: var(--bg-card-muted);
 }

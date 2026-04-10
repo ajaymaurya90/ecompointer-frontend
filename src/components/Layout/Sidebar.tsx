@@ -61,7 +61,7 @@ function FlyoutMenu({ open, collapsed, items, isActive }: FlyoutMenuProps) {
                         href={item.href}
                         className={`flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive(item.href)
                             ? "bg-sidebarActive app-text-sidebar"
-                            : "app-text-sidebar-muted hover:bg-sidebarHover hover:app-text-sidebar"
+                            : "app-text-sidebar-muted hover:bg-sidebarHover hover:text-textSidebar"
                             }`}
                     >
                         <span className="shrink-0">{item.icon}</span>
@@ -91,9 +91,10 @@ const Sidebar = () => {
     return (
         <aside
             className={`${collapsed ? "w-24" : "w-72"
-                } app-sidebar flex min-h-screen flex-col transition-all duration-300`}
+                } app-sidebar relative sticky top-0 h-screen flex-shrink-0 overflow-visible transition-all duration-300`}
         >
-            <div className="flex-1">
+            <div className="flex h-full flex-col">
+                {/* Header */}
                 <div className="flex h-20 items-center justify-between border-b border-borderStrong px-5">
                     {!collapsed && (
                         <h2 className="app-text-sidebar text-[22px] font-bold tracking-tight">
@@ -111,224 +112,228 @@ const Sidebar = () => {
                     </button>
                 </div>
 
-                <nav className="space-y-2 px-4 py-6">
-                    <Link
-                        href="/dashboard"
-                        className={`sidebar-nav-item flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isActive("/dashboard") ? "active" : "app-text-sidebar-muted"
-                            }`}
-                    >
-                        <LayoutDashboard size={18} className="shrink-0" />
-                        {!collapsed && <span>Dashboard</span>}
-                    </Link>
-
-                    <div
-                        className="relative"
-                        onMouseEnter={() => setOpenMenu("products")}
-                        onMouseLeave={() => setOpenMenu(null)}
-                    >
-                        <div
-                            className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isProductsSectionActive ? "active" : "app-text-sidebar-muted"
+                {/* Scrollable nav area */}
+                <div className="flex-1 overflow-visible">
+                    <nav className="space-y-2 px-4 py-6">
+                        <Link
+                            href="/dashboard"
+                            className={`sidebar-nav-item flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isActive("/dashboard") ? "active" : "app-text-sidebar-muted"
                                 }`}
                         >
-                            <Package size={18} className="shrink-0" />
-                            {!collapsed && <span>Products</span>}
-                        </div>
+                            <LayoutDashboard size={18} className="shrink-0" />
+                            {!collapsed && <span>Dashboard</span>}
+                        </Link>
 
-                        <FlyoutMenu
-                            open={openMenu === "products"}
-                            collapsed={collapsed}
-                            isActive={isActive}
-                            items={[
-                                {
-                                    href: "/dashboard/products",
-                                    label: "Product List",
-                                    icon: <Package size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/products/categories",
-                                    label: "Categories",
-                                    icon: <FolderTree size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/products/brands",
-                                    label: "Brands",
-                                    icon: <Store size={16} />,
-                                },
-                            ]}
-                        />
-                    </div>
-
-                    <div
-                        className="relative"
-                        onMouseEnter={() => setOpenMenu("customers")}
-                        onMouseLeave={() => setOpenMenu(null)}
-                    >
                         <div
-                            className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isCustomersSectionActive ? "active" : "app-text-sidebar-muted"
-                                }`}
+                            className="relative"
+                            onMouseEnter={() => setOpenMenu("products")}
+                            onMouseLeave={() => setOpenMenu(null)}
                         >
-                            <Users size={18} className="shrink-0" />
-                            {!collapsed && <span>Customers</span>}
+                            <div
+                                className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isProductsSectionActive ? "active" : "app-text-sidebar-muted"
+                                    }`}
+                            >
+                                <Package size={18} className="shrink-0" />
+                                {!collapsed && <span>Products</span>}
+                            </div>
+
+                            <FlyoutMenu
+                                open={openMenu === "products"}
+                                collapsed={collapsed}
+                                isActive={isActive}
+                                items={[
+                                    {
+                                        href: "/dashboard/products",
+                                        label: "Product List",
+                                        icon: <Package size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/products/categories",
+                                        label: "Categories",
+                                        icon: <FolderTree size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/products/brands",
+                                        label: "Brands",
+                                        icon: <Store size={16} />,
+                                    },
+                                ]}
+                            />
                         </div>
 
-                        <FlyoutMenu
-                            open={openMenu === "customers"}
-                            collapsed={collapsed}
-                            isActive={isActive}
-                            items={[
-                                {
-                                    href: "/dashboard/customers",
-                                    label: "Customer List",
-                                    icon: <Users size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/customers/new",
-                                    label: "Add Customer",
-                                    icon: <UserPlus size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/customer-groups",
-                                    label: "Customer Groups",
-                                    icon: <Layers3 size={16} />,
-                                },
-                            ]}
-                        />
-                    </div>
-
-                    <div
-                        className="relative"
-                        onMouseEnter={() => setOpenMenu("shopOwners")}
-                        onMouseLeave={() => setOpenMenu(null)}
-                    >
                         <div
-                            className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isShopOwnersSectionActive ? "active" : "app-text-sidebar-muted"
-                                }`}
+                            className="relative"
+                            onMouseEnter={() => setOpenMenu("customers")}
+                            onMouseLeave={() => setOpenMenu(null)}
                         >
-                            <Store size={18} className="shrink-0" />
-                            {!collapsed && <span>Shop Owners</span>}
+                            <div
+                                className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isCustomersSectionActive ? "active" : "app-text-sidebar-muted"
+                                    }`}
+                            >
+                                <Users size={18} className="shrink-0" />
+                                {!collapsed && <span>Customers</span>}
+                            </div>
+
+                            <FlyoutMenu
+                                open={openMenu === "customers"}
+                                collapsed={collapsed}
+                                isActive={isActive}
+                                items={[
+                                    {
+                                        href: "/dashboard/customers",
+                                        label: "Customer List",
+                                        icon: <Users size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/customers/new",
+                                        label: "Add Customer",
+                                        icon: <UserPlus size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/customer-groups",
+                                        label: "Customer Groups",
+                                        icon: <Layers3 size={16} />,
+                                    },
+                                ]}
+                            />
                         </div>
 
-                        <FlyoutMenu
-                            open={openMenu === "shopOwners"}
-                            collapsed={collapsed}
-                            isActive={isActive}
-                            items={[
-                                {
-                                    href: "/dashboard/shop-owners",
-                                    label: "Shop Owner List",
-                                    icon: <Store size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/shop-owners/new",
-                                    label: "Add Shop Owner",
-                                    icon: <UserPlus size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/shop-owners/link-existing",
-                                    label: "Link Existing",
-                                    icon: <Link2 size={16} />,
-                                },
-                            ]}
-                        />
-                    </div>
-
-                    <div
-                        className="relative"
-                        onMouseEnter={() => setOpenMenu("orders")}
-                        onMouseLeave={() => setOpenMenu(null)}
-                    >
                         <div
-                            className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isOrdersSectionActive ? "active" : "app-text-sidebar-muted"
-                                }`}
+                            className="relative"
+                            onMouseEnter={() => setOpenMenu("shopOwners")}
+                            onMouseLeave={() => setOpenMenu(null)}
                         >
-                            <ShoppingCart size={18} className="shrink-0" />
-                            {!collapsed && <span>Orders</span>}
+                            <div
+                                className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isShopOwnersSectionActive ? "active" : "app-text-sidebar-muted"
+                                    }`}
+                            >
+                                <Store size={18} className="shrink-0" />
+                                {!collapsed && <span>Shop Owners</span>}
+                            </div>
+
+                            <FlyoutMenu
+                                open={openMenu === "shopOwners"}
+                                collapsed={collapsed}
+                                isActive={isActive}
+                                items={[
+                                    {
+                                        href: "/dashboard/shop-owners",
+                                        label: "Shop Owner List",
+                                        icon: <Store size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/shop-owners/new",
+                                        label: "Add Shop Owner",
+                                        icon: <UserPlus size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/shop-owners/link-existing",
+                                        label: "Link Existing",
+                                        icon: <Link2 size={16} />,
+                                    },
+                                ]}
+                            />
                         </div>
 
-                        <FlyoutMenu
-                            open={openMenu === "orders"}
-                            collapsed={collapsed}
-                            isActive={isActive}
-                            items={[
-                                {
-                                    href: "/dashboard/orders",
-                                    label: "Order List",
-                                    icon: <ClipboardList size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/orders/new",
-                                    label: "Create Order",
-                                    icon: <ShoppingCart size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/orders/payments",
-                                    label: "Payments",
-                                    icon: <Receipt size={16} />,
-                                },
-                            ]}
-                        />
-                    </div>
-
-                    <div
-                        className="relative"
-                        onMouseEnter={() => setOpenMenu("settings")}
-                        onMouseLeave={() => setOpenMenu(null)}
-                    >
                         <div
-                            className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isSettingsSectionActive ? "active" : "app-text-sidebar-muted"
-                                }`}
+                            className="relative"
+                            onMouseEnter={() => setOpenMenu("orders")}
+                            onMouseLeave={() => setOpenMenu(null)}
                         >
-                            <Settings size={18} className="shrink-0" />
-                            {!collapsed && <span>Settings</span>}
+                            <div
+                                className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isOrdersSectionActive ? "active" : "app-text-sidebar-muted"
+                                    }`}
+                            >
+                                <ShoppingCart size={18} className="shrink-0" />
+                                {!collapsed && <span>Orders</span>}
+                            </div>
+
+                            <FlyoutMenu
+                                open={openMenu === "orders"}
+                                collapsed={collapsed}
+                                isActive={isActive}
+                                items={[
+                                    {
+                                        href: "/dashboard/orders",
+                                        label: "Order List",
+                                        icon: <ClipboardList size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/orders/new",
+                                        label: "Create Order",
+                                        icon: <ShoppingCart size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/orders/payments",
+                                        label: "Payments",
+                                        icon: <Receipt size={16} />,
+                                    },
+                                ]}
+                            />
                         </div>
 
-                        <FlyoutMenu
-                            open={openMenu === "settings"}
-                            collapsed={collapsed}
-                            isActive={isActive}
-                            items={[
-                                {
-                                    href: "/dashboard/settings/profile",
-                                    label: "Profile",
-                                    icon: <User size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/settings/location",
-                                    label: "Location",
-                                    icon: <MapPin size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/settings/language",
-                                    label: "Language",
-                                    icon: <Globe size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/settings/service-area",
-                                    label: "Service Area",
-                                    icon: <Globe size={16} />,
-                                },
-                                {
-                                    href: "/dashboard/settings/storefront",
-                                    label: "Storefront",
-                                    icon: <Globe size={16} />,
-                                },
-                            ]}
-                        />
-                    </div>
-                </nav>
-            </div>
+                        <div
+                            className="relative"
+                            onMouseEnter={() => setOpenMenu("settings")}
+                            onMouseLeave={() => setOpenMenu(null)}
+                        >
+                            <div
+                                className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isSettingsSectionActive ? "active" : "app-text-sidebar-muted"
+                                    }`}
+                            >
+                                <Settings size={18} className="shrink-0" />
+                                {!collapsed && <span>Settings</span>}
+                            </div>
 
-            <div className="border-t border-borderStrong p-4">
-                <button
-                    onClick={logout}
-                    type="button"
-                    className="sidebar-nav-item flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium app-text-sidebar-muted"
-                >
-                    <div className="app-muted-surface flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-borderStrong">
-                        <LogOut size={16} />
-                    </div>
-                    {!collapsed && <span>Logout</span>}
-                </button>
+                            <FlyoutMenu
+                                open={openMenu === "settings"}
+                                collapsed={collapsed}
+                                isActive={isActive}
+                                items={[
+                                    {
+                                        href: "/dashboard/settings/profile",
+                                        label: "Profile",
+                                        icon: <User size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/settings/location",
+                                        label: "Location",
+                                        icon: <MapPin size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/settings/language",
+                                        label: "Language",
+                                        icon: <Globe size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/settings/service-area",
+                                        label: "Service Area",
+                                        icon: <Globe size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/settings/storefront",
+                                        label: "Storefront",
+                                        icon: <Globe size={16} />,
+                                    },
+                                ]}
+                            />
+                        </div>
+                    </nav>
+                </div>
+
+                {/* Footer */}
+                <div className="border-t border-borderStrong p-4">
+                    <button
+                        onClick={logout}
+                        type="button"
+                        className="sidebar-nav-item flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium app-text-sidebar-muted"
+                    >
+                        <div className="app-muted-surface flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-borderStrong">
+                            <LogOut size={16} />
+                        </div>
+                        {!collapsed && <span>Logout</span>}
+                    </button>
+                </div>
             </div>
         </aside>
     );

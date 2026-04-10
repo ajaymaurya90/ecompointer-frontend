@@ -35,12 +35,12 @@ export default function DataPanel({
     return (
         <section
             className={cn(
-                "overflow-hidden rounded-xl bg-card shadow-card",
+                "relative overflow-visible rounded-xl bg-card shadow-card",
                 className
             )}
         >
             {hasHeader ? (
-                <div className="flex flex-col gap-4 bg-cardMuted px-6 py-5 md:flex-row md:items-center md:justify-between">
+                <div className="flex flex-col gap-4 rounded-t-xl bg-cardMuted px-6 py-5 md:flex-row md:items-center md:justify-between">
                     <div className="space-y-1">
                         {title ? (
                             <h2 className="text-xl font-semibold text-textPrimary">
@@ -49,7 +49,9 @@ export default function DataPanel({
                         ) : null}
 
                         {description ? (
-                            <p className="text-sm text-textSecondary">{description}</p>
+                            <p className="text-sm text-textSecondary">
+                                {description}
+                            </p>
                         ) : null}
                     </div>
 
@@ -61,10 +63,14 @@ export default function DataPanel({
                 </div>
             ) : null}
 
-            <div className={cn("min-w-0", bodyClassName)}>{children}</div>
+            <div className={cn("min-w-0 bg-card", bodyClassName)}>
+                {children}
+            </div>
 
             {footer ? (
-                <div className="table-footer px-6 py-4">{footer}</div>
+                <div className="table-footer rounded-b-xl px-6 py-4">
+                    {footer}
+                </div>
             ) : null}
         </section>
     );

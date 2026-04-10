@@ -18,6 +18,7 @@ import Button from "@/components/ui/Button";
 import FilterChip from "@/components/ui/FilterChip";
 import PageShell from "@/components/layout/PageShell";
 import DataPanel from "@/components/layout/DataPanel";
+import SelectMenu from "@/components/ui/SelectMenu";
 
 export default function ProductsPageContainer() {
     const router = useRouter();
@@ -88,15 +89,6 @@ export default function ProductsPageContainer() {
             alert("Failed to delete product");
         }
     };
-
-    const pageSummary = useMemo(() => {
-        if (total === 0) return "0 products";
-
-        const from = (page - 1) * filters.limit + 1;
-        const to = Math.min(page * filters.limit, total);
-
-        return `${from}-${to} of ${total} products`;
-    }, [page, total, filters.limit]);
 
     const categoryNameMap = useMemo(() => {
         const map = new Map<string, string>();
@@ -170,17 +162,18 @@ export default function ProductsPageContainer() {
     const panelFooter = (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-4">
-                <select
+                <SelectMenu
+                    label="Items per page"
                     value={filters.limit}
-                    onChange={(e) => void setLimit(Number(e.target.value))}
-                    className="h-11 rounded-md border border-borderSoft bg-inputBg px-3 text-sm text-textPrimary outline-none transition focus:border-borderFocus"
-                >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                </select>
-
-                <span className="text-sm text-textSecondary">{pageSummary}</span>
+                    onChange={(value) => void setLimit(Number(value))}
+                    options={[
+                        { label: "10", value: 10 },
+                        { label: "20", value: 20 },
+                        { label: "50", value: 50 },
+                    ]}
+                    buttonClassName="min-w-[88px]"
+                    menuWidthClassName="w-[88px]"
+                />
             </div>
 
             <div className="flex items-center gap-3">
