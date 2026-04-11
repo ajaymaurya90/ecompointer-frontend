@@ -31,6 +31,7 @@ import {
     Trash2,
     Upload,
 } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 interface ProductMediaTabProps {
     productId: string;
@@ -71,10 +72,10 @@ function SortableMediaCard({
         <div
             ref={setNodeRef}
             style={style}
-            className={`overflow-hidden rounded-2xl border border-borderColorCustom bg-white ${isDragging ? "opacity-70 shadow-lg" : ""
+            className={`overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm ${isDragging ? "opacity-70 shadow-lg" : ""
                 }`}
         >
-            <div className="relative flex h-[220px] items-center justify-center bg-background">
+            <div className="relative flex h-[220px] items-center justify-center bg-cardMuted">
                 <img
                     src={getPreviewUrl(item)}
                     alt={item.asset.altText || item.asset.title || "Product media"}
@@ -85,7 +86,7 @@ function SortableMediaCard({
                     type="button"
                     {...attributes}
                     {...listeners}
-                    className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-xs font-medium text-textPrimary shadow-sm"
+                    className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-card px-2.5 py-1 text-xs font-medium text-textPrimary shadow-sm ring-1 ring-borderSoft"
                     title="Drag to reorder"
                 >
                     <GripVertical size={12} />
@@ -93,7 +94,7 @@ function SortableMediaCard({
                 </button>
 
                 {item.isPrimary ? (
-                    <div className="absolute right-3 top-3 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
+                    <div className="absolute right-3 top-3 rounded-full bg-warningSoft px-2.5 py-1 text-xs font-medium text-warning">
                         Primary
                     </div>
                 ) : null}
@@ -114,29 +115,29 @@ function SortableMediaCard({
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                    <button
-                        type="button"
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        leftIcon={<Star size={15} />}
                         onClick={() => onSetPrimary(item.id)}
                         disabled={item.isPrimary || savingPrimaryId === item.id}
-                        className="inline-flex items-center gap-2 rounded-lg border border-borderColorCustom px-3 py-2 text-sm transition hover:bg-background disabled:opacity-60"
                     >
-                        <Star size={15} />
                         {item.isPrimary
                             ? "Primary"
                             : savingPrimaryId === item.id
                                 ? "Saving..."
                                 : "Set Primary"}
-                    </button>
+                    </Button>
 
-                    <button
-                        type="button"
+                    <Button
+                        variant="danger"
+                        size="sm"
+                        leftIcon={<Trash2 size={15} />}
                         onClick={() => onDelete(item.id)}
                         disabled={deletingId === item.id}
-                        className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-60"
                     >
-                        <Trash2 size={15} />
                         {deletingId === item.id ? "Removing..." : "Delete"}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>
@@ -327,7 +328,7 @@ export default function ProductMediaTab({ productId }: ProductMediaTabProps) {
 
     if (loading) {
         return (
-            <div className="rounded-2xl border border-borderColorCustom bg-white p-8 text-textSecondary">
+            <div className="rounded-2xl border border-borderSoft bg-card p-8 text-textSecondary shadow-sm">
                 Loading media...
             </div>
         );
@@ -335,8 +336,8 @@ export default function ProductMediaTab({ productId }: ProductMediaTabProps) {
 
     return (
         <div className="space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-borderColorCustom bg-white">
-                <div className="flex flex-col gap-4 border-b border-borderColorCustom px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
+                <div className="table-header flex flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <h4 className="text-lg font-semibold text-textPrimary">
                             Product Media
@@ -363,22 +364,21 @@ export default function ProductMediaTab({ productId }: ProductMediaTabProps) {
                             onChange={handleSelectFiles}
                         />
 
-                        <button
-                            type="button"
+                        <Button
+                            variant="primary"
+                            leftIcon={<Upload size={16} />}
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploading}
-                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-60"
                         >
-                            <Upload size={16} />
                             {uploading ? "Uploading..." : "Upload Images"}
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
                 <div className="p-6">
                     {!hasMedia ? (
-                        <div className="rounded-xl border border-dashed border-borderColorCustom bg-background p-10 text-center">
-                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-borderColorCustom bg-white">
+                        <div className="rounded-2xl border border-dashed border-borderSoft bg-cardMuted p-10 text-center">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-card ring-1 ring-borderSoft">
                                 <ImageIcon size={22} className="text-textSecondary" />
                             </div>
                             <h5 className="mt-4 text-base font-medium text-textPrimary">
@@ -391,17 +391,17 @@ export default function ProductMediaTab({ productId }: ProductMediaTabProps) {
                     ) : (
                         <div className="space-y-6">
                             {primaryItem ? (
-                                <div className="rounded-2xl border border-borderColorCustom bg-background p-4">
+                                <div className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft">
                                     <div className="mb-3 flex items-center justify-between gap-3">
                                         <div className="text-sm font-medium text-textSecondary">
                                             Primary Preview
                                         </div>
-                                        <div className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                                        <div className="rounded-full bg-warningSoft px-3 py-1 text-xs font-medium text-warning">
                                             Main Storefront Image
                                         </div>
                                     </div>
 
-                                    <div className="overflow-hidden rounded-xl border border-borderColorCustom bg-white">
+                                    <div className="overflow-hidden rounded-xl bg-card ring-1 ring-borderSoft">
                                         <img
                                             src={getGalleryUrl(primaryItem)}
                                             alt={

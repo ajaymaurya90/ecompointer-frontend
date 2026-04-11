@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { MoreVertical } from "lucide-react";
 
 interface ProductRowActionMenuProps {
@@ -10,133 +10,78 @@ interface ProductRowActionMenuProps {
     onDelete: () => void;
 }
 
+function cn(...classes: Array<string | false | null | undefined>) {
+    return classes.filter(Boolean).join(" ");
+}
+
 export default function ProductRowActionMenu({
     onEdit,
     onDuplicate,
     onShowVariants,
     onDelete,
 }: ProductRowActionMenuProps) {
-    const [open, setOpen] = useState(false);
-    const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
-
-    const rootRef = useRef<HTMLDivElement | null>(null);
-    const buttonRef = useRef<HTMLButtonElement | null>(null);
-    const menuRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-                setOpen(false);
-            }
-        };
-
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        document.addEventListener("keydown", handleEscape);
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-            document.removeEventListener("keydown", handleEscape);
-        };
-    }, []);
-
-    useLayoutEffect(() => {
-        if (!open || !buttonRef.current || !menuRef.current) return;
-
-        const buttonRect = buttonRef.current.getBoundingClientRect();
-        const menuHeight = menuRef.current.offsetHeight;
-        const menuWidth = menuRef.current.offsetWidth;
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        const gap = 8;
-
-        let top = buttonRect.bottom + gap;
-        let left = buttonRect.right - menuWidth;
-
-        if (top + menuHeight > viewportHeight - 8) {
-            top = buttonRect.top - menuHeight - gap;
-        }
-
-        if (left < 8) {
-            left = 8;
-        }
-
-        if (left + menuWidth > viewportWidth - 8) {
-            left = viewportWidth - menuWidth - 8;
-        }
-
-        setMenuStyle({
-            position: "fixed",
-            top,
-            left,
-            zIndex: 9999,
-        });
-    }, [open]);
-
-    const handleAction = (callback: () => void) => {
-        setOpen(false);
-        callback();
-    };
-
     return (
-        <div ref={rootRef} className="relative inline-block text-left">
-            <button
-                ref={buttonRef}
-                type="button"
-                onClick={() => setOpen((prev) => !prev)}
-                className="interactive-button inline-flex h-9 w-9 items-center justify-center rounded-xl text-textSecondary transition hover:bg-cardMuted hover:text-textPrimary"
-                aria-label="Open product actions"
-            >
-                <MoreVertical size={18} />
-            </button>
-
-            {open ? (
-                <div
-                    ref={menuRef}
-                    style={menuStyle}
-                    className="w-48 overflow-hidden rounded-xl border border-borderSoft bg-card shadow-md"
+        <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+                <button
+                    type="button"
+                    className="interactive-button inline-flex h-9 w-9 items-center justify-center rounded-xl text-textSecondary transition hover:bg-cardMuted hover:text-textPrimary"
+                    aria-label="Open product actions"
                 >
-                    <button
-                        type="button"
-                        onClick={() => handleAction(onEdit)}
-                        className="block w-full px-4 py-3 text-left text-sm text-textPrimary transition hover:bg-cardMuted"
+                    <MoreVertical size={18} />
+                </button>
+            </DropdownMenu.Trigger>
+
+            <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                    align="end"
+                    sideOffset={6}
+                    collisionPadding={8}
+                    className="z-[9999] min-w-[192px] overflow-hidden rounded-xl border border-borderSoft bg-card shadow-md"
+                >
+                    <DropdownMenu.Item
+                        onSelect={onEdit}
+                        className={cn(
+                            "cursor-pointer px-4 py-3 text-sm text-textPrimary outline-none transition",
+                            "hover:bg-cardMuted focus:bg-cardMuted"
+                        )}
                     >
                         Edit
-                    </button>
+                    </DropdownMenu.Item>
 
-                    <button
-                        type="button"
-                        onClick={() => handleAction(onDuplicate)}
-                        className="block w-full px-4 py-3 text-left text-sm text-textPrimary transition hover:bg-cardMuted"
+                    <DropdownMenu.Item
+                        onSelect={onDuplicate}
+                        className={cn(
+                            "cursor-pointer px-4 py-3 text-sm text-textPrimary outline-none transition",
+                            "hover:bg-cardMuted focus:bg-cardMuted"
+                        )}
                     >
                         Duplicate
-                    </button>
+                    </DropdownMenu.Item>
 
-                    <button
-                        type="button"
-                        onClick={() => handleAction(onShowVariants)}
-                        className="block w-full px-4 py-3 text-left text-sm text-textPrimary transition hover:bg-cardMuted"
+                    <DropdownMenu.Item
+                        onSelect={onShowVariants}
+                        className={cn(
+                            "cursor-pointer px-4 py-3 text-sm text-textPrimary outline-none transition",
+                            "hover:bg-cardMuted focus:bg-cardMuted"
+                        )}
                     >
                         Show Variants
-                    </button>
+                    </DropdownMenu.Item>
 
-                    <div className="border-t border-borderSoft" />
+                    <DropdownMenu.Separator className="h-px bg-borderSoft" />
 
-                    <button
-                        type="button"
-                        onClick={() => handleAction(onDelete)}
-                        className="block w-full px-4 py-3 text-left text-sm text-danger transition hover:bg-dangerSoft"
+                    <DropdownMenu.Item
+                        onSelect={onDelete}
+                        className={cn(
+                            "cursor-pointer px-4 py-3 text-sm text-danger outline-none transition",
+                            "hover:bg-dangerSoft focus:bg-dangerSoft"
+                        )}
                     >
                         Delete
-                    </button>
-                </div>
-            ) : null}
-        </div>
+                    </DropdownMenu.Item>
+                </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+        </DropdownMenu.Root>
     );
 }

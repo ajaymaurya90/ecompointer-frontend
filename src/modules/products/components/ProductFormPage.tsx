@@ -29,6 +29,7 @@ import {
     createProductVariant,
     updateProductVariant,
 } from "@/modules/products/api/productVariantApi";
+import Button from "@/components/ui/Button";
 
 interface ProductFormPageProps {
     mode: "create" | "edit";
@@ -59,6 +60,33 @@ const emptyForm: ProductFormData = {
     deliveryTimeLabel: "",
     restockTimeDays: "",
 };
+
+function TabButton({
+    label,
+    active,
+    onClick,
+}: {
+    label: string;
+    active: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`relative pb-4 text-sm font-medium transition ${active
+                    ? "text-primary"
+                    : "text-textSecondary hover:text-textPrimary"
+                }`}
+        >
+            {label}
+            <span
+                className={`absolute bottom-0 left-0 h-0.5 rounded-full bg-primary transition-all ${active ? "w-full opacity-100" : "w-0 opacity-0"
+                    }`}
+            />
+        </button>
+    );
+}
 
 export default function ProductFormPage({
     mode,
@@ -376,7 +404,7 @@ export default function ProductFormPage({
                 {mode === "edit" && productId ? (
                     <ProductMediaTab productId={productId} />
                 ) : (
-                    <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
+                    <div className="rounded-2xl border border-borderSoft bg-card p-8 shadow-sm">
                         <h4 className="text-lg font-semibold text-textPrimary">
                             Product Gallery
                         </h4>
@@ -387,32 +415,23 @@ export default function ProductFormPage({
                 )}
 
                 <div className="flex items-center justify-end gap-3">
-                    {mode === "edit" && (
-                        <button
-                            type="button"
-                            onClick={handleDelete}
-                            className="rounded-lg border border-red-200 px-4 py-2 text-red-600 transition hover:bg-red-50"
-                        >
+                    {mode === "edit" ? (
+                        <Button variant="danger" onClick={handleDelete}>
                             Delete
-                        </button>
-                    )}
+                        </Button>
+                    ) : null}
 
-                    <button
-                        type="button"
-                        onClick={handleCancel}
-                        className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background"
-                    >
+                    <Button variant="secondary" onClick={handleCancel}>
                         Cancel
-                    </button>
+                    </Button>
 
-                    <button
-                        type="button"
+                    <Button
+                        variant="primary"
                         onClick={handleSave}
                         disabled={saving}
-                        className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
                     >
                         {saving ? "Saving..." : "Save Product"}
-                    </button>
+                    </Button>
                 </div>
             </div>
         );
@@ -421,7 +440,7 @@ export default function ProductFormPage({
     const renderVariantsTab = () => {
         if (mode === "create" || !productId) {
             return (
-                <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
+                <div className="rounded-2xl border border-borderSoft bg-card p-8 shadow-sm">
                     <h4 className="text-lg font-semibold text-textPrimary">
                         Variants
                     </h4>
@@ -468,7 +487,7 @@ export default function ProductFormPage({
 
     const renderSeoTab = () => {
         return (
-            <div className="rounded-2xl border border-borderColorCustom bg-white p-8">
+            <div className="rounded-2xl border border-borderSoft bg-card p-8 shadow-sm">
                 <h4 className="text-lg font-semibold text-textPrimary">SEO</h4>
                 <p className="mt-2 text-textSecondary">
                     SEO settings will be added next.
@@ -491,7 +510,7 @@ export default function ProductFormPage({
 
     if (loading) {
         return (
-            <div className="rounded-2xl border border-borderColorCustom bg-card p-6 text-textSecondary">
+            <div className="rounded-2xl border border-borderSoft bg-card p-6 text-textSecondary shadow-sm">
                 Loading product...
             </div>
         );
@@ -499,71 +518,55 @@ export default function ProductFormPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between rounded-2xl border border-borderColorCustom bg-card px-6 py-4">
-                <div>
-                    <div className="text-sm text-textSecondary">Product settings</div>
-                    <h2 className="text-2xl font-semibold text-textPrimary">
-                        {mode === "create" ? "Create Product" : productName}
-                    </h2>
-                </div>
+            <div className="rounded-2xl border border-borderSoft bg-card px-6 py-5 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-1">
+                        <div className="text-sm text-textSecondary">
+                            Product settings
+                        </div>
+                        <h2 className="text-3xl font-semibold tracking-tight text-textPrimary">
+                            {mode === "create" ? "Create Product" : productName}
+                        </h2>
+                    </div>
 
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={handleCancel}
-                        className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background"
-                    >
-                        Cancel
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Button variant="secondary" onClick={handleCancel}>
+                            Cancel
+                        </Button>
 
-                    {activeTab === "general" && (
-                        <button
-                            type="button"
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
-                        >
-                            {saving ? "Saving..." : "Save Product"}
-                        </button>
-                    )}
+                        {activeTab === "general" ? (
+                            <Button
+                                variant="primary"
+                                onClick={handleSave}
+                                disabled={saving}
+                            >
+                                {saving ? "Saving..." : "Save Product"}
+                            </Button>
+                        ) : null}
+                    </div>
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-borderColorCustom bg-card">
-                <div className="border-b border-borderColorCustom px-6 pt-4">
-                    <div className="flex gap-8">
-                        <button
-                            type="button"
+            <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
+                <div className="table-header px-6 pt-4">
+                    <div className="flex items-center gap-8">
+                        <TabButton
+                            label="General"
+                            active={activeTab === "general"}
                             onClick={() => setActiveTab("general")}
-                            className={`pb-3 text-sm ${activeTab === "general"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
-                                }`}
-                        >
-                            General
-                        </button>
+                        />
 
-                        <button
-                            type="button"
+                        <TabButton
+                            label="Variants"
+                            active={activeTab === "variants"}
                             onClick={() => setActiveTab("variants")}
-                            className={`pb-3 text-sm ${activeTab === "variants"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
-                                }`}
-                        >
-                            Variants
-                        </button>
+                        />
 
-                        <button
-                            type="button"
+                        <TabButton
+                            label="SEO"
+                            active={activeTab === "seo"}
                             onClick={() => setActiveTab("seo")}
-                            className={`pb-3 text-sm ${activeTab === "seo"
-                                    ? "border-b-2 border-primary font-medium text-primary"
-                                    : "text-textSecondary"
-                                }`}
-                        >
-                            SEO
-                        </button>
+                        />
                     </div>
                 </div>
 

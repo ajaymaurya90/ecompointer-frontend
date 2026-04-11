@@ -10,6 +10,7 @@ import {
 } from "@/modules/products/api/productVariantApi";
 import VariantGeneratorModal from "@/modules/products/components/VariantGeneratorModal";
 import { Pencil, Trash2, Plus, WandSparkles } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 interface ProductVariantsTabProps {
     productId: string;
@@ -48,6 +49,10 @@ function getAttributeSummary(variant: ProductVariant): string {
                 `${item.attributeValue.attribute.name}: ${item.attributeValue.value}`
         )
         .join(" / ");
+}
+
+function formatMoney(value?: number) {
+    return `₹${Number(value ?? 0).toFixed(2)}`;
 }
 
 export default function ProductVariantsTab({
@@ -104,75 +109,78 @@ export default function ProductVariantsTab({
 
     return (
         <div className="space-y-6">
-            {showGenerator && (
+            {showGenerator ? (
                 <VariantGeneratorModal
                     productId={productId}
                     defaultValues={defaultValues}
                     onClose={() => setShowGenerator(false)}
                     onGenerated={loadData}
                 />
-            )}
+            ) : null}
 
-            <div className="rounded-2xl border border-borderColorCustom bg-white">
-                <div className="border-b border-borderColorCustom px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-semibold text-textPrimary">
-                            Variant Overview
-                        </h4>
+            <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
+                <div className="table-header px-6 py-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <h4 className="text-lg font-semibold text-textPrimary">
+                                Variant Overview
+                            </h4>
+                            <p className="mt-1 text-sm text-textSecondary">
+                                Manage generated and manual variants for this product.
+                            </p>
+                        </div>
 
-                        <div className="flex items-center gap-3">
-                            <button
-                                type="button"
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Button
+                                variant="secondary"
+                                leftIcon={<WandSparkles size={16} />}
                                 onClick={() => setShowGenerator(true)}
-                                className="inline-flex items-center gap-2 rounded-lg border border-borderColorCustom px-4 py-2 text-sm transition hover:bg-background"
                             >
-                                <WandSparkles size={16} />
                                 Generate Variants
-                            </button>
+                            </Button>
 
-                            <button
-                                type="button"
+                            <Button
+                                variant="primary"
+                                leftIcon={<Plus size={16} />}
                                 onClick={onAddVariant}
-                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                             >
-                                <Plus size={16} />
                                 Add Variant
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 px-6 py-6 md:grid-cols-3">
-                    <div className="rounded-xl border border-borderColorCustom bg-background p-4">
+                    <div className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft">
                         <div className="text-sm text-textSecondary">Total Variants</div>
                         <div className="mt-2 text-2xl font-semibold text-textPrimary">
                             {summary?.totalVariants ?? 0}
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-borderColorCustom bg-background p-4">
+                    <div className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft">
                         <div className="text-sm text-textSecondary">Total Stock</div>
                         <div className="mt-2 text-2xl font-semibold text-textPrimary">
                             {summary?.totalStock ?? 0}
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-borderColorCustom bg-background p-4">
+                    <div className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft">
                         <div className="text-sm text-textSecondary">Price Range</div>
                         <div className="mt-2 text-2xl font-semibold text-textPrimary">
                             {summary
-                                ? `${summary.priceRange.min} - ${summary.priceRange.max}`
-                                : "0 - 0"}
+                                ? `${formatMoney(summary.priceRange.min)} - ${formatMoney(
+                                    summary.priceRange.max
+                                )}`
+                                : `${formatMoney(0)} - ${formatMoney(0)}`}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-borderColorCustom bg-white">
-                <div className="border-b border-borderColorCustom px-6 py-4">
-                    <h4 className="text-lg font-semibold text-textPrimary">
-                        Variants
-                    </h4>
+            <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
+                <div className="table-header px-6 py-4">
+                    <h4 className="text-lg font-semibold text-textPrimary">Variants</h4>
                 </div>
 
                 {loading ? (
@@ -187,89 +195,88 @@ export default function ProductVariantsTab({
                         </p>
                     </div>
                 ) : (
-                    <table className="w-full border-collapse text-left">
-                        <thead className="border-b border-borderColorCustom bg-background">
-                            <tr>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">
-                                    SKU
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">
-                                    Attributes
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">
-                                    Retail Gross
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">
-                                    Wholesale Gross
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">
-                                    Stock
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-textPrimary">
-                                    Status
-                                </th>
-                                <th className="px-6 py-4 text-right font-semibold text-textPrimary">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {variants.map((variant) => (
-                                <tr
-                                    key={variant.id}
-                                    className="border-b border-borderColorCustom transition hover:bg-background"
-                                >
-                                    <td className="px-6 py-4 text-textPrimary">
-                                        {variant.sku}
-                                    </td>
-                                    <td className="px-6 py-4 text-textSecondary">
-                                        {getAttributeSummary(variant)}
-                                    </td>
-                                    <td className="px-6 py-4 text-textSecondary">
-                                        {variant.retailGross}
-                                    </td>
-                                    <td className="px-6 py-4 text-textSecondary">
-                                        {variant.wholesaleGross}
-                                    </td>
-                                    <td className="px-6 py-4 text-textSecondary">
-                                        {variant.stock}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`rounded-full px-2 py-1 text-xs font-medium ${variant.isActive
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-gray-100 text-gray-600"
-                                                }`}
-                                        >
-                                            {variant.isActive ? "Active" : "Inactive"}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex justify-end gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => onEditVariant(variant)}
-                                                className="text-blue-600 hover:text-blue-700"
-                                                aria-label={`Edit ${variant.sku}`}
-                                            >
-                                                <Pencil size={18} />
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => void handleDelete(variant)}
-                                                className="text-red-600 hover:text-red-700"
-                                                aria-label={`Delete ${variant.sku}`}
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[980px] table-fixed border-collapse text-left">
+                            <thead className="table-header shadow-[inset_0_-1px_0_var(--border-soft)]">
+                                <tr>
+                                    <th className="px-6 py-4 text-sm font-semibold text-textPrimary">
+                                        SKU
+                                    </th>
+                                    <th className="px-6 py-4 text-sm font-semibold text-textPrimary">
+                                        Attributes
+                                    </th>
+                                    <th className="px-6 py-4 text-sm font-semibold text-textPrimary">
+                                        Retail Gross
+                                    </th>
+                                    <th className="px-6 py-4 text-sm font-semibold text-textPrimary">
+                                        Wholesale Gross
+                                    </th>
+                                    <th className="px-6 py-4 text-sm font-semibold text-textPrimary">
+                                        Stock
+                                    </th>
+                                    <th className="px-6 py-4 text-sm font-semibold text-textPrimary">
+                                        Status
+                                    </th>
+                                    <th className="px-6 py-4 text-right text-sm font-semibold text-textPrimary">
+                                        Actions
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+
+                            <tbody>
+                                {variants.map((variant) => (
+                                    <tr key={variant.id} className="table-row">
+                                        <td className="px-6 py-4 text-sm font-medium text-textPrimary">
+                                            {variant.sku}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-textSecondary">
+                                            {getAttributeSummary(variant)}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-textSecondary">
+                                            {formatMoney(variant.retailGross)}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-textSecondary">
+                                            {formatMoney(variant.wholesaleGross)}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-textSecondary">
+                                            {variant.stock}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span
+                                                className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${variant.isActive
+                                                        ? "bg-successSoft text-success"
+                                                        : "bg-cardMuted text-textSecondary"
+                                                    }`}
+                                            >
+                                                {variant.isActive ? "Active" : "Inactive"}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex justify-end gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onEditVariant(variant)}
+                                                    className="interactive-button inline-flex h-9 w-9 items-center justify-center rounded-xl text-info hover:bg-infoSoft"
+                                                    aria-label={`Edit ${variant.sku}`}
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void handleDelete(variant)}
+                                                    className="interactive-button inline-flex h-9 w-9 items-center justify-center rounded-xl text-danger hover:bg-dangerSoft"
+                                                    aria-label={`Delete ${variant.sku}`}
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         </div>

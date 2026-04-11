@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import type { ReactNode } from "react";
 import { X } from "lucide-react";
 
 interface FilterModalProps {
@@ -18,45 +18,32 @@ export default function FilterModal({
     children,
     footer,
 }: FilterModalProps) {
-    useEffect(() => {
-        if (!open) return;
-
-        const handleEsc = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                onClose();
-            }
-        };
-
-        document.addEventListener("keydown", handleEsc);
-        document.body.style.overflow = "hidden";
-
-        return () => {
-            document.removeEventListener("keydown", handleEsc);
-            document.body.style.overflow = "";
-        };
-    }, [open, onClose]);
-
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-borderColorCustom bg-white shadow-2xl">
-                <div className="flex items-center justify-between border-b border-borderColorCustom px-6 py-4">
-                    <h3 className="text-xl font-semibold text-textPrimary">{title}</h3>
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-overlay px-4 py-6">
+            <div className="flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl bg-card shadow-lg ring-1 ring-borderSoft">
+                <div className="table-header flex items-center justify-between px-8 py-6">
+                    <h2 className="text-2xl font-semibold text-textPrimary">
+                        {title}
+                    </h2>
 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-lg p-2 text-textSecondary transition hover:bg-background hover:text-textPrimary"
+                        className="interactive-button inline-flex h-11 w-11 items-center justify-center rounded-2xl text-textSecondary hover:bg-cardMuted hover:text-textPrimary"
+                        aria-label="Close filters"
                     >
-                        <X size={18} />
+                        <X size={22} />
                     </button>
                 </div>
 
-                <div className="overflow-auto px-6 py-6">{children}</div>
+                <div className="flex-1 overflow-y-auto px-8 py-8">
+                    {children}
+                </div>
 
                 {footer ? (
-                    <div className="border-t border-borderColorCustom px-6 py-4">
+                    <div className="table-footer px-8 py-5">
                         {footer}
                     </div>
                 ) : null}

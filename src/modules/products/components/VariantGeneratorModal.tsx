@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import * as Select from "@radix-ui/react-select";
 import {
     generateProductVariants,
     type GenerateProductVariantsPayload,
 } from "@/modules/products/api/productVariantGeneratorApi";
-import { Plus, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Plus, Trash2, X } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 interface VariantGeneratorModalProps {
     productId: string;
@@ -32,6 +34,82 @@ const createAttributeRow = (): AttributeRow => ({
     name: "",
     values: "",
 });
+
+function cn(...classes: Array<string | false | null | undefined>) {
+    return classes.filter(Boolean).join(" ");
+}
+
+function TextInput({
+    value,
+    onChange,
+    placeholder,
+    type = "text",
+    min,
+    step,
+}: {
+    value: string | number;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    type?: string;
+    min?: string | number;
+    step?: string | number;
+}) {
+    return (
+        <input
+            type={type}
+            min={min}
+            step={step}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="h-12 w-full rounded-xl bg-card px-4 text-sm text-textPrimary outline-none ring-1 ring-borderSoft transition placeholder:text-textSecondary focus:ring-2 focus:ring-borderFocus/30"
+        />
+    );
+}
+
+function StatusSelect({
+    value,
+    onChange,
+}: {
+    value: "ACTIVE" | "INACTIVE";
+    onChange: (value: "ACTIVE" | "INACTIVE") => void;
+}) {
+    return (
+        <Select.Root value={value} onValueChange={(next) => onChange(next as "ACTIVE" | "INACTIVE")}>
+            <Select.Trigger className="interactive-button flex h-12 w-full items-center justify-between rounded-xl bg-card px-4 text-left text-sm text-textPrimary ring-1 ring-borderSoft shadow-sm hover:bg-cardMuted">
+                <Select.Value />
+                <Select.Icon>
+                    <ChevronDown size={16} className="text-textSecondary" />
+                </Select.Icon>
+            </Select.Trigger>
+
+            <Select.Portal>
+                <Select.Content
+                    sideOffset={8}
+                    position="popper"
+                    className="z-[9999] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-borderSoft bg-elevated shadow-md"
+                >
+                    <Select.Viewport className="p-1">
+                        {["ACTIVE", "INACTIVE"].map((option) => (
+                            <Select.Item
+                                key={option}
+                                value={option}
+                                className="flex cursor-pointer items-center justify-between rounded-lg px-4 py-2.5 text-sm text-textPrimary outline-none transition hover:bg-cardMuted focus:bg-cardMuted data-[state=checked]:bg-cardMuted"
+                            >
+                                <Select.ItemText>
+                                    {option === "ACTIVE" ? "Active" : "Inactive"}
+                                </Select.ItemText>
+                                <Select.ItemIndicator>
+                                    <Check size={14} className="text-primary" />
+                                </Select.ItemIndicator>
+                            </Select.Item>
+                        ))}
+                    </Select.Viewport>
+                </Select.Content>
+            </Select.Portal>
+        </Select.Root>
+    );
+}
 
 export default function VariantGeneratorModal({
     productId,
@@ -174,9 +252,9 @@ export default function VariantGeneratorModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="max-h-[90vh] w-full max-w-5xl overflow-auto rounded-2xl bg-white shadow-2xl">
-                <div className="flex items-center justify-between border-b border-borderColorCustom px-6 py-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+            <div className="max-h-[90vh] w-full max-w-5xl overflow-auto rounded-2xl border border-borderSoft bg-card shadow-2xl">
+                <div className="table-header flex items-center justify-between px-6 py-4">
                     <div>
                         <h3 className="text-xl font-semibold text-textPrimary">
                             Generate Variants
@@ -188,7 +266,7 @@ export default function VariantGeneratorModal({
 
                     <button
                         onClick={onClose}
-                        className="rounded-lg p-2 text-textSecondary transition hover:bg-background"
+                        className="interactive-button rounded-xl p-2 text-textSecondary transition hover:bg-cardMuted"
                     >
                         <X size={20} />
                     </button>
@@ -196,20 +274,21 @@ export default function VariantGeneratorModal({
 
                 <div className="grid grid-cols-1 gap-6 p-6 xl:grid-cols-[1.2fr_0.8fr]">
                     <div className="space-y-6">
-                        <div className="rounded-2xl border border-borderColorCustom bg-white">
-                            <div className="border-b border-borderColorCustom px-6 py-4">
+                        <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
+                            <div className="table-header px-6 py-4">
                                 <div className="flex items-center justify-between">
                                     <h4 className="text-lg font-semibold text-textPrimary">
                                         Attributes
                                     </h4>
 
-                                    <button
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        leftIcon={<Plus size={16} />}
                                         onClick={addAttribute}
-                                        className="inline-flex items-center gap-2 rounded-lg border border-borderColorCustom px-3 py-2 text-sm transition hover:bg-background"
                                     >
-                                        <Plus size={16} />
                                         Add Attribute
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
 
@@ -217,21 +296,21 @@ export default function VariantGeneratorModal({
                                 {attributes.map((attribute, index) => (
                                     <div
                                         key={attribute.id}
-                                        className="rounded-xl border border-borderColorCustom bg-background p-4"
+                                        className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft"
                                     >
                                         <div className="mb-4 flex items-center justify-between">
                                             <div className="text-sm font-medium text-textPrimary">
                                                 Attribute {index + 1}
                                             </div>
 
-                                            {attributes.length > 1 && (
+                                            {attributes.length > 1 ? (
                                                 <button
                                                     onClick={() => removeAttribute(attribute.id)}
-                                                    className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
+                                                    className="interactive-button rounded-xl p-2 text-danger transition hover:bg-dangerSoft"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
-                                            )}
+                                            ) : null}
                                         </div>
 
                                         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -239,18 +318,12 @@ export default function VariantGeneratorModal({
                                                 <label className="mb-2 block text-sm font-medium text-textPrimary">
                                                     Attribute Name
                                                 </label>
-                                                <input
-                                                    type="text"
+                                                <TextInput
                                                     value={attribute.name}
-                                                    onChange={(e) =>
-                                                        updateAttribute(
-                                                            attribute.id,
-                                                            "name",
-                                                            e.target.value
-                                                        )
+                                                    onChange={(value) =>
+                                                        updateAttribute(attribute.id, "name", value)
                                                     }
                                                     placeholder="e.g. Size, Color, Fabric"
-                                                    className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
                                                 />
                                             </div>
 
@@ -258,18 +331,12 @@ export default function VariantGeneratorModal({
                                                 <label className="mb-2 block text-sm font-medium text-textPrimary">
                                                     Values
                                                 </label>
-                                                <input
-                                                    type="text"
+                                                <TextInput
                                                     value={attribute.values}
-                                                    onChange={(e) =>
-                                                        updateAttribute(
-                                                            attribute.id,
-                                                            "values",
-                                                            e.target.value
-                                                        )
+                                                    onChange={(value) =>
+                                                        updateAttribute(attribute.id, "values", value)
                                                     }
                                                     placeholder="e.g. S, M, L"
-                                                    className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
                                                 />
                                                 <p className="mt-2 text-xs text-textSecondary">
                                                     Separate values with commas.
@@ -281,8 +348,8 @@ export default function VariantGeneratorModal({
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-borderColorCustom bg-white">
-                            <div className="border-b border-borderColorCustom px-6 py-4">
+                        <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
+                            <div className="table-header px-6 py-4">
                                 <h4 className="text-lg font-semibold text-textPrimary">
                                     Shared Defaults
                                 </h4>
@@ -297,12 +364,13 @@ export default function VariantGeneratorModal({
                                     <label className="mb-2 block text-sm font-medium text-textPrimary">
                                         Tax Rate %
                                     </label>
-                                    <input
+                                    <TextInput
                                         type="number"
                                         min="0"
                                         value={taxRate}
-                                        onChange={(e) => setTaxRate(Number(e.target.value) || 0)}
-                                        className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                        onChange={(value) =>
+                                            setTaxRate(Number(value) || 0)
+                                        }
                                     />
                                 </div>
 
@@ -310,13 +378,14 @@ export default function VariantGeneratorModal({
                                     <label className="mb-2 block text-sm font-medium text-textPrimary">
                                         Cost Price
                                     </label>
-                                    <input
+                                    <TextInput
                                         type="number"
                                         min="0"
                                         step="0.01"
                                         value={costPrice}
-                                        onChange={(e) => setCostPrice(Number(e.target.value) || 0)}
-                                        className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                        onChange={(value) =>
+                                            setCostPrice(Number(value) || 0)
+                                        }
                                     />
                                 </div>
 
@@ -324,15 +393,14 @@ export default function VariantGeneratorModal({
                                     <label className="mb-2 block text-sm font-medium text-textPrimary">
                                         Wholesale Net
                                     </label>
-                                    <input
+                                    <TextInput
                                         type="number"
                                         min="0"
                                         step="0.01"
                                         value={wholesaleNet}
-                                        onChange={(e) =>
-                                            setWholesaleNet(Number(e.target.value) || 0)
+                                        onChange={(value) =>
+                                            setWholesaleNet(Number(value) || 0)
                                         }
-                                        className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
                                     />
                                 </div>
 
@@ -340,15 +408,14 @@ export default function VariantGeneratorModal({
                                     <label className="mb-2 block text-sm font-medium text-textPrimary">
                                         Retail Net
                                     </label>
-                                    <input
+                                    <TextInput
                                         type="number"
                                         min="0"
                                         step="0.01"
                                         value={retailNet}
-                                        onChange={(e) =>
-                                            setRetailNet(Number(e.target.value) || 0)
+                                        onChange={(value) =>
+                                            setRetailNet(Number(value) || 0)
                                         }
-                                        className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
                                     />
                                 </div>
 
@@ -356,13 +423,14 @@ export default function VariantGeneratorModal({
                                     <label className="mb-2 block text-sm font-medium text-textPrimary">
                                         Stock
                                     </label>
-                                    <input
+                                    <TextInput
                                         type="number"
                                         min="0"
                                         step="1"
                                         value={stock}
-                                        onChange={(e) => setStock(Number(e.target.value) || 0)}
-                                        className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
+                                        onChange={(value) =>
+                                            setStock(Number(value) || 0)
+                                        }
                                     />
                                 </div>
 
@@ -370,29 +438,27 @@ export default function VariantGeneratorModal({
                                     <label className="mb-2 block text-sm font-medium text-textPrimary">
                                         Status
                                     </label>
-                                    <select
+                                    <StatusSelect
                                         value={isActive ? "ACTIVE" : "INACTIVE"}
-                                        onChange={(e) => setIsActive(e.target.value === "ACTIVE")}
-                                        className="w-full rounded-lg border border-borderColorCustom bg-white px-3 py-2 outline-none focus:border-primary"
-                                    >
-                                        <option value="ACTIVE">Active</option>
-                                        <option value="INACTIVE">Inactive</option>
-                                    </select>
+                                        onChange={(value) =>
+                                            setIsActive(value === "ACTIVE")
+                                        }
+                                    />
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div className="space-y-6">
-                        <div className="rounded-2xl border border-borderColorCustom bg-white">
-                            <div className="border-b border-borderColorCustom px-6 py-4">
+                        <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
+                            <div className="table-header px-6 py-4">
                                 <h4 className="text-lg font-semibold text-textPrimary">
                                     Preview
                                 </h4>
                             </div>
 
                             <div className="space-y-4 px-6 py-6">
-                                <div className="rounded-xl border border-borderColorCustom bg-background p-4">
+                                <div className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft">
                                     <div className="text-sm text-textSecondary">
                                         Total combinations
                                     </div>
@@ -407,7 +473,7 @@ export default function VariantGeneratorModal({
                                     </div>
 
                                     {previewCombinations.length === 0 ? (
-                                        <div className="rounded-xl border border-borderColorCustom bg-background p-4 text-sm text-textSecondary">
+                                        <div className="rounded-2xl bg-cardMuted p-4 text-sm text-textSecondary ring-1 ring-borderSoft">
                                             Add valid attributes and values to preview combinations.
                                         </div>
                                     ) : (
@@ -415,7 +481,7 @@ export default function VariantGeneratorModal({
                                             {previewCombinations.map((item, index) => (
                                                 <div
                                                     key={`${item}-${index}`}
-                                                    className="rounded-lg border border-borderColorCustom bg-background px-3 py-2 text-sm text-textPrimary"
+                                                    className="rounded-xl bg-cardMuted px-3 py-2 text-sm text-textPrimary ring-1 ring-borderSoft"
                                                 >
                                                     {item}
                                                 </div>
@@ -427,20 +493,17 @@ export default function VariantGeneratorModal({
                         </div>
 
                         <div className="flex items-center justify-end gap-3">
-                            <button
-                                onClick={onClose}
-                                className="rounded-lg border border-borderColorCustom px-4 py-2 transition hover:bg-background"
-                            >
+                            <Button variant="secondary" onClick={onClose}>
                                 Cancel
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
+                                variant="primary"
                                 onClick={handleSubmit}
                                 disabled={submitting}
-                                className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
                             >
                                 {submitting ? "Generating..." : "Generate Variants"}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

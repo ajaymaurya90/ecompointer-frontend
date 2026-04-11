@@ -90,8 +90,7 @@ const Sidebar = () => {
 
     return (
         <aside
-            className={`${collapsed ? "w-24" : "w-72"
-                } app-sidebar relative sticky top-0 h-screen flex-shrink-0 overflow-visible transition-all duration-300`}
+            className={`${collapsed ? "w-24" : "w-72"} app-sidebar fixed left-0 top-0 z-40 flex h-screen flex-col transition-all duration-300`}
         >
             <div className="flex h-full flex-col">
                 {/* Header */}

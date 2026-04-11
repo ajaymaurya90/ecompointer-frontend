@@ -16,6 +16,7 @@ import {
     Upload,
 } from "lucide-react";
 import { resolveMediaUrl } from "@/lib/media";
+import Button from "@/components/ui/Button";
 
 interface VariantMediaTabProps {
     variantId: string;
@@ -139,9 +140,17 @@ export default function VariantMediaTab({
         }
     };
 
+    if (loading) {
+        return (
+            <div className="rounded-2xl border border-borderSoft bg-card p-6 text-textSecondary shadow-sm">
+                Loading variant media...
+            </div>
+        );
+    }
+
     return (
-        <div className="rounded-2xl border border-borderColorCustom bg-white">
-            <div className="flex items-center justify-between border-b border-borderColorCustom px-6 py-4">
+        <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
+            <div className="table-header flex items-center justify-between px-6 py-4">
                 <div>
                     <h4 className="text-lg font-semibold text-textPrimary">
                         Variant Media
@@ -162,41 +171,38 @@ export default function VariantMediaTab({
                         onChange={handleSelectFiles}
                     />
 
-                    <button
-                        type="button"
+                    <Button
+                        variant="primary"
+                        leftIcon={<Upload size={16} />}
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-60"
                     >
-                        <Upload size={16} />
                         {uploading ? "Uploading..." : "Upload Variant Images"}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
-            <div className="border-b border-borderColorCustom px-6 py-4">
+            <div className="table-header px-6 py-4">
                 <div className="flex flex-wrap items-center gap-3">
                     <span className="text-sm font-medium text-textPrimary">
                         Current source:
                     </span>
 
                     {hasOwnVariantMedia ? (
-                        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                        <span className="rounded-full bg-infoSoft px-3 py-1 text-xs font-medium text-info">
                             Using variant images
                         </span>
                     ) : (
-                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                        <span className="rounded-full bg-warningSoft px-3 py-1 text-xs font-medium text-warning">
                             Using parent product images
                         </span>
                     )}
                 </div>
             </div>
 
-            {loading ? (
-                <div className="p-6 text-textSecondary">Loading variant media...</div>
-            ) : !hasMedia ? (
+            {!hasMedia ? (
                 <div className="p-10 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-background">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cardMuted ring-1 ring-borderSoft">
                         <ImageIcon size={24} className="text-textSecondary" />
                     </div>
                     <h5 className="text-lg font-medium text-textPrimary">
@@ -210,12 +216,12 @@ export default function VariantMediaTab({
             ) : (
                 <div className="space-y-6 p-6">
                     {primaryItem ? (
-                        <div className="rounded-2xl border border-borderColorCustom bg-background p-4">
+                        <div className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft">
                             <div className="mb-3 text-sm font-medium text-textSecondary">
                                 Primary Preview
                             </div>
 
-                            <div className="overflow-hidden rounded-xl border border-borderColorCustom bg-white">
+                            <div className="overflow-hidden rounded-xl bg-card ring-1 ring-borderSoft">
                                 <img
                                     src={getMainPreviewUrl(primaryItem) || ""}
                                     alt={
@@ -233,9 +239,9 @@ export default function VariantMediaTab({
                         {mediaItems.map((item) => (
                             <div
                                 key={item.id}
-                                className="overflow-hidden rounded-2xl border border-borderColorCustom bg-card"
+                                className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm"
                             >
-                                <div className="relative h-[220px] w-full bg-background">
+                                <div className="relative h-[220px] w-full bg-cardMuted">
                                     <img
                                         src={getPreviewUrl(item) || ""}
                                         alt={item.asset.altText || item.asset.title || "Variant media"}
@@ -243,13 +249,13 @@ export default function VariantMediaTab({
                                     />
 
                                     {item.isPrimary ? (
-                                        <span className="absolute right-3 top-3 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
+                                        <span className="absolute right-3 top-3 rounded-full bg-infoSoft px-2.5 py-1 text-xs font-medium text-info">
                                             Primary
                                         </span>
                                     ) : null}
 
                                     {!hasOwnVariantMedia ? (
-                                        <span className="absolute left-3 top-3 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
+                                        <span className="absolute left-3 top-3 rounded-full bg-warningSoft px-2.5 py-1 text-xs font-medium text-warning">
                                             Product fallback
                                         </span>
                                     ) : null}
@@ -267,35 +273,37 @@ export default function VariantMediaTab({
                                     </div>
 
                                     <div className="flex items-center justify-between gap-3">
-                                        <button
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            leftIcon={<Star size={16} />}
                                             onClick={() => void handleMakePrimary(item)}
                                             disabled={
                                                 item.isPrimary ||
                                                 !hasOwnVariantMedia ||
                                                 savingPrimaryId === item.id
                                             }
-                                            className="inline-flex items-center gap-2 rounded-lg border border-borderColorCustom px-3 py-2 text-sm transition hover:bg-background disabled:opacity-50"
                                         >
-                                            <Star size={16} />
                                             {item.isPrimary
                                                 ? "Primary"
                                                 : savingPrimaryId === item.id
                                                     ? "Saving..."
                                                     : "Set Primary"}
-                                        </button>
+                                        </Button>
 
-                                        <button
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            leftIcon={<Trash2 size={16} />}
                                             onClick={() => void handleDelete(item)}
                                             disabled={!hasOwnVariantMedia || deletingId === item.id}
-                                            className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-50"
                                         >
-                                            <Trash2 size={16} />
                                             {deletingId === item.id ? "Removing..." : "Delete"}
-                                        </button>
+                                        </Button>
                                     </div>
 
                                     {!hasOwnVariantMedia ? (
-                                        <div className="rounded-lg border border-borderColorCustom bg-background px-3 py-2 text-xs text-textSecondary">
+                                        <div className="rounded-xl bg-cardMuted px-3 py-2 text-xs text-textSecondary ring-1 ring-borderSoft">
                                             These images come from the parent product. Upload
                                             variant images to override them for this variant.
                                         </div>

@@ -165,14 +165,12 @@ export default function ProductsPageContainer() {
                 <SelectMenu
                     label="Items per page"
                     value={filters.limit}
-                    onChange={(value) => void setLimit(Number(value))}
+                    onChange={(val) => setLimit(Number(val))}
                     options={[
                         { label: "10", value: 10 },
                         { label: "20", value: 20 },
                         { label: "50", value: 50 },
                     ]}
-                    buttonClassName="min-w-[88px]"
-                    menuWidthClassName="w-[88px]"
                 />
             </div>
 
@@ -318,6 +316,7 @@ export default function ProductsPageContainer() {
                 categories={categories}
                 brands={brands}
                 initialFilters={filters}
+                total={total}
             />
         </PageShell>
     );
