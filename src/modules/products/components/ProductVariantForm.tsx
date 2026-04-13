@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Select from "@radix-ui/react-select";
 import type {
     ProductVariant,
@@ -29,6 +29,8 @@ interface ProductVariantFormProps {
     onSubmit: (data: ProductVariantFormData) => Promise<void>;
     onCancel: () => void;
     submitting?: boolean;
+    hideFooterActions?: boolean;
+    submitTrigger?: number;
 }
 
 const emptyForm: ProductVariantFormData = {
@@ -85,11 +87,13 @@ function SectionBox({
     children: React.ReactNode;
 }) {
     return (
-        <div className="rounded-2xl bg-cardMuted p-5 ring-1 ring-borderSoft">
-            <div className="mb-4">
+        <div className="rounded-[24px] bg-cardMuted/70 p-5 ring-1 ring-borderSoft">
+            <div className="mb-5">
                 <h5 className="text-base font-semibold text-textPrimary">{title}</h5>
                 {description ? (
-                    <p className="mt-1 text-sm text-textSecondary">{description}</p>
+                    <p className="mt-1 text-sm leading-6 text-textSecondary">
+                        {description}
+                    </p>
                 ) : null}
             </div>
             {children}
@@ -139,7 +143,10 @@ function StatusSelect({
     onChange: (value: "ACTIVE" | "INACTIVE") => void;
 }) {
     return (
-        <Select.Root value={value} onValueChange={(next) => onChange(next as "ACTIVE" | "INACTIVE")}>
+        <Select.Root
+            value={value}
+            onValueChange={(next) => onChange(next as "ACTIVE" | "INACTIVE")}
+        >
             <Select.Trigger className="interactive-button flex h-12 w-full items-center justify-between rounded-xl bg-card px-4 text-left text-sm text-textPrimary ring-1 ring-borderSoft shadow-sm hover:bg-cardMuted">
                 <Select.Value />
                 <Select.Icon>
@@ -181,8 +188,11 @@ export default function ProductVariantForm({
     onSubmit,
     onCancel,
     submitting = false,
+    hideFooterActions = false,
+    submitTrigger,
 }: ProductVariantFormProps) {
     const [form, setForm] = useState<ProductVariantFormData>(emptyForm);
+    const lastSubmitTriggerRef = useRef<number | undefined>(submitTrigger);
 
     useEffect(() => {
         if (variant) {
@@ -280,7 +290,7 @@ export default function ProductVariantForm({
         }));
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = useCallback(async () => {
         if (form.sku !== undefined && form.sku.trim() === "") {
             const payload = { ...form };
             delete payload.sku;
@@ -300,7 +310,23 @@ export default function ProductVariantForm({
             color: form.color?.trim() || undefined,
             deliveryTimeLabel: form.deliveryTimeLabel?.trim() || undefined,
         });
-    };
+    }, [form, onSubmit]);
+
+    useEffect(() => {
+        if (submitTrigger === undefined) {
+            return;
+        }
+
+        if (lastSubmitTriggerRef.current === undefined) {
+            lastSubmitTriggerRef.current = submitTrigger;
+            return;
+        }
+
+        if (submitTrigger !== lastSubmitTriggerRef.current) {
+            lastSubmitTriggerRef.current = submitTrigger;
+            void handleSubmit();
+        }
+    }, [submitTrigger, handleSubmit]);
 
     const isUsingProductDefault = (
         field: CommercialField | MerchandisingField | FulfillmentField
@@ -433,12 +459,12 @@ export default function ProductVariantForm({
     };
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
-            <div className="table-header px-6 py-4">
-                <h4 className="text-lg font-semibold text-textPrimary">
+        <div className="overflow-hidden rounded-[28px] border border-borderSoft bg-card shadow-sm">
+            <div className="table-header px-6 py-5">
+                <h4 className="text-xl font-semibold text-textPrimary">
                     {variant ? "Edit Variant" : "Add Variant"}
                 </h4>
-                <p className="mt-1 text-sm text-textSecondary">
+                <p className="mt-1 text-sm leading-6 text-textSecondary">
                     {variant
                         ? "Compare this variant against the product defaults and override only where needed."
                         : "New variants start from product defaults and can be adjusted here."}
@@ -542,7 +568,10 @@ export default function ProductVariantForm({
                                 }
                                 label="Enabled"
                             />
-                            {renderBooleanDefaultHint("isFreeShipping", defaultValues?.isFreeShipping)}
+                            {renderBooleanDefaultHint(
+                                "isFreeShipping",
+                                defaultValues?.isFreeShipping
+                            )}
                         </div>
 
                         <div className="rounded-2xl bg-card p-4 ring-1 ring-borderSoft">
@@ -561,7 +590,10 @@ export default function ProductVariantForm({
                                 }
                                 label="Enabled"
                             />
-                            {renderBooleanDefaultHint("isClearance", defaultValues?.isClearance)}
+                            {renderBooleanDefaultHint(
+                                "isClearance",
+                                defaultValues?.isClearance
+                            )}
                         </div>
                     </div>
                 </SectionBox>
@@ -862,19 +894,21 @@ export default function ProductVariantForm({
                 </SectionBox>
             </div>
 
-            <div className="table-footer flex items-center justify-end gap-3 px-6 py-4">
-                <Button variant="secondary" onClick={onCancel}>
-                    Cancel
-                </Button>
+            {!hideFooterActions ? (
+                <div className="table-footer flex items-center justify-end gap-3 px-6 py-4">
+                    <Button variant="secondary" onClick={onCancel}>
+                        Cancel
+                    </Button>
 
-                <Button
-                    variant="primary"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                >
-                    {submitting ? "Saving..." : "Save Variant"}
-                </Button>
-            </div>
+                    <Button
+                        variant="primary"
+                        onClick={() => void handleSubmit()}
+                        disabled={submitting}
+                    >
+                        {submitting ? "Saving..." : "Save Variant"}
+                    </Button>
+                </div>
+            ) : null}
         </div>
     );
 }

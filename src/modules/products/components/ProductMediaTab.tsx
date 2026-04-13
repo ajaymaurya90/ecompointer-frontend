@@ -30,8 +30,13 @@ import {
     Star,
     Trash2,
     Upload,
+    Images,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import MediaPickerModal from "@/modules/media/components/MediaPickerModal";
+import { assignMediaToProduct } from "@/modules/media/api/mediaApi";
+import type { MediaLibraryItem } from "@/modules/media/types/media";
+import { resolveMediaUrl } from "@/lib/media";
 
 interface ProductMediaTabProps {
     productId: string;
@@ -144,21 +149,6 @@ function SortableMediaCard({
     );
 }
 
-const MEDIA_BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-
-function resolveMediaUrl(url?: string | null) {
-    if (!url) {
-        return "";
-    }
-
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-        return url;
-    }
-
-    return `${MEDIA_BASE_URL}${url}`;
-}
-
 export default function ProductMediaTab({ productId }: ProductMediaTabProps) {
     const [items, setItems] = useState<ProductMediaItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -166,6 +156,8 @@ export default function ProductMediaTab({ productId }: ProductMediaTabProps) {
     const [savingPrimaryId, setSavingPrimaryId] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [reordering, setReordering] = useState(false);
+    const [pickerOpen, setPickerOpen] = useState(false);
+    const [attachingExisting, setAttachingExisting] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -228,6 +220,25 @@ export default function ProductMediaTab({ productId }: ProductMediaTabProps) {
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
+        }
+    };
+
+    const handleAttachExistingMedia = async (selectedItems: MediaLibraryItem[]) => {
+        setAttachingExisting(true);
+
+        try {
+            for (const item of selectedItems) {
+                await assignMediaToProduct(productId, {
+                    mediaAssetId: item.id,
+                });
+            }
+
+            await loadMedia();
+        } catch (error: any) {
+            console.error(error);
+            alert(error?.response?.data?.message || "Failed to attach media");
+        } finally {
+            setAttachingExisting(false);
         }
     };
 
@@ -335,125 +346,147 @@ export default function ProductMediaTab({ productId }: ProductMediaTabProps) {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
-                <div className="table-header flex flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <h4 className="text-lg font-semibold text-textPrimary">
-                            Product Media
-                        </h4>
-                        <p className="mt-1 text-sm text-textSecondary">
-                            Upload product images. The system automatically generates
-                            gallery, thumbnail, and zoom versions.
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {reordering ? (
-                            <span className="text-sm text-textSecondary">
-                                Saving order...
-                            </span>
-                        ) : null}
-
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            onChange={handleSelectFiles}
-                        />
-
-                        <Button
-                            variant="primary"
-                            leftIcon={<Upload size={16} />}
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploading}
-                        >
-                            {uploading ? "Uploading..." : "Upload Images"}
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="p-6">
-                    {!hasMedia ? (
-                        <div className="rounded-2xl border border-dashed border-borderSoft bg-cardMuted p-10 text-center">
-                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-card ring-1 ring-borderSoft">
-                                <ImageIcon size={22} className="text-textSecondary" />
-                            </div>
-                            <h5 className="mt-4 text-base font-medium text-textPrimary">
-                                No media uploaded yet
-                            </h5>
-                            <p className="mt-2 text-sm text-textSecondary">
-                                Upload one or more images to build the product gallery.
+        <>
+            <div className="space-y-6">
+                <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
+                    <div className="table-header flex flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <h4 className="text-lg font-semibold text-textPrimary">
+                                Product Media
+                            </h4>
+                            <p className="mt-1 text-sm text-textSecondary">
+                                Upload product images or select from the media library.
+                                The system automatically generates gallery, thumbnail,
+                                and zoom versions.
                             </p>
                         </div>
-                    ) : (
-                        <div className="space-y-6">
-                            {primaryItem ? (
-                                <div className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft">
-                                    <div className="mb-3 flex items-center justify-between gap-3">
-                                        <div className="text-sm font-medium text-textSecondary">
-                                            Primary Preview
-                                        </div>
-                                        <div className="rounded-full bg-warningSoft px-3 py-1 text-xs font-medium text-warning">
-                                            Main Storefront Image
-                                        </div>
-                                    </div>
 
-                                    <div className="overflow-hidden rounded-xl bg-card ring-1 ring-borderSoft">
-                                        <img
-                                            src={getGalleryUrl(primaryItem)}
-                                            alt={
-                                                primaryItem.asset.altText ||
-                                                primaryItem.asset.title ||
-                                                "Primary media"
-                                            }
-                                            className="h-[360px] w-full object-contain"
-                                        />
-                                    </div>
-                                </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            {reordering ? (
+                                <span className="text-sm text-textSecondary">
+                                    Saving order...
+                                </span>
                             ) : null}
 
-                            <div>
-                                <div className="mb-3 flex items-center justify-between gap-3">
-                                    <div className="text-sm font-medium text-textSecondary">
-                                        Gallery
-                                    </div>
-                                    <div className="text-xs text-textSecondary">
-                                        Drag images to change storefront order
-                                    </div>
-                                </div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={handleSelectFiles}
+                            />
 
-                                <DndContext
-                                    sensors={sensors}
-                                    collisionDetection={closestCenter}
-                                    onDragEnd={(event) => void handleDragEnd(event)}
-                                >
-                                    <SortableContext
-                                        items={items.map((item) => item.id)}
-                                        strategy={rectSortingStrategy}
-                                    >
-                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                                            {items.map((item) => (
-                                                <SortableMediaCard
-                                                    key={item.id}
-                                                    item={item}
-                                                    onSetPrimary={handleSetPrimary}
-                                                    onDelete={handleDelete}
-                                                    savingPrimaryId={savingPrimaryId}
-                                                    deletingId={deletingId}
-                                                    getPreviewUrl={getPreviewUrl}
-                                                />
-                                            ))}
-                                        </div>
-                                    </SortableContext>
-                                </DndContext>
-                            </div>
+                            <Button
+                                variant="secondary"
+                                leftIcon={<Images size={16} />}
+                                onClick={() => setPickerOpen(true)}
+                                disabled={attachingExisting}
+                            >
+                                {attachingExisting ? "Attaching..." : "Select Media"}
+                            </Button>
+
+                            <Button
+                                variant="primary"
+                                leftIcon={<Upload size={16} />}
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploading}
+                            >
+                                {uploading ? "Uploading..." : "Upload Images"}
+                            </Button>
                         </div>
-                    )}
+                    </div>
+
+                    <div className="p-6">
+                        {!hasMedia ? (
+                            <div className="rounded-2xl border border-dashed border-borderSoft bg-cardMuted p-10 text-center">
+                                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-card ring-1 ring-borderSoft">
+                                    <ImageIcon size={22} className="text-textSecondary" />
+                                </div>
+                                <h5 className="mt-4 text-base font-medium text-textPrimary">
+                                    No media uploaded yet
+                                </h5>
+                                <p className="mt-2 text-sm text-textSecondary">
+                                    Upload one or more images or choose existing media from
+                                    the library to build the product gallery.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {primaryItem ? (
+                                    <div className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft">
+                                        <div className="mb-3 flex items-center justify-between gap-3">
+                                            <div className="text-sm font-medium text-textSecondary">
+                                                Primary Preview
+                                            </div>
+                                            <div className="rounded-full bg-warningSoft px-3 py-1 text-xs font-medium text-warning">
+                                                Main Storefront Image
+                                            </div>
+                                        </div>
+
+                                        <div className="overflow-hidden rounded-xl bg-card ring-1 ring-borderSoft">
+                                            <img
+                                                src={getGalleryUrl(primaryItem)}
+                                                alt={
+                                                    primaryItem.asset.altText ||
+                                                    primaryItem.asset.title ||
+                                                    "Primary media"
+                                                }
+                                                className="h-[360px] w-full object-contain"
+                                            />
+                                        </div>
+                                    </div>
+                                ) : null}
+
+                                <div>
+                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                        <div className="text-sm font-medium text-textSecondary">
+                                            Gallery
+                                        </div>
+                                        <div className="text-xs text-textSecondary">
+                                            Drag images to change storefront order
+                                        </div>
+                                    </div>
+
+                                    <DndContext
+                                        sensors={sensors}
+                                        collisionDetection={closestCenter}
+                                        onDragEnd={(event) => void handleDragEnd(event)}
+                                    >
+                                        <SortableContext
+                                            items={items.map((item) => item.id)}
+                                            strategy={rectSortingStrategy}
+                                        >
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                                {items.map((item) => (
+                                                    <SortableMediaCard
+                                                        key={item.id}
+                                                        item={item}
+                                                        onSetPrimary={handleSetPrimary}
+                                                        onDelete={handleDelete}
+                                                        savingPrimaryId={savingPrimaryId}
+                                                        deletingId={deletingId}
+                                                        getPreviewUrl={getPreviewUrl}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </SortableContext>
+                                    </DndContext>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <MediaPickerModal
+                open={pickerOpen}
+                onClose={() => setPickerOpen(false)}
+                onConfirm={handleAttachExistingMedia}
+                title="Add Product Media"
+                multiple={true}
+                confirmLabel="Attach Media"
+            />
+        </>
     );
 }

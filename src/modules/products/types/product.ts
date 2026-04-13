@@ -62,6 +62,38 @@ export interface ProductBrand {
     name: string;
 }
 
+export interface ProductManufacturer {
+    id: string;
+    name: string;
+    code?: string | null;
+    description?: string | null;
+
+    contactPerson?: string | null;
+    email?: string | null;
+    phone?: string | null;
+
+    addressLine1?: string | null;
+    addressLine2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    postalCode?: string | null;
+
+    gstNumber?: string | null;
+    website?: string | null;
+    supportNotes?: string | null;
+
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ProductManufacturerOption {
+    id: string;
+    name: string;
+    code?: string | null;
+}
+
 export interface ProductCategory {
     id: string;
     name: string;
@@ -80,6 +112,7 @@ export interface ProductFormData {
     name: string;
     productCode: string;
     brandId: string;
+    manufacturerId: string;
     categoryId: string;
     categoryIds: string[];
     description: string;
@@ -110,10 +143,12 @@ export interface Product {
     description?: string;
 
     brandId?: string;
+    manufacturerId?: string | null;
     categoryId?: string;
     categoryIds?: string[];
 
     brand?: ProductBrand;
+    manufacturer?: ProductManufacturer | null;
     category?: ProductCategory;
     categoryAssignments?: Array<{
         categoryId: string;
@@ -150,4 +185,5 @@ export interface Product {
     variantCount?: number;
     isActive?: boolean;
     createdAt?: string;
+    updatedAt?: string;
 }

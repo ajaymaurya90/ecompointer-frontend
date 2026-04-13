@@ -23,10 +23,13 @@ import {
     Receipt,
     ClipboardList,
     Link2,
+    FolderOpen,
+    Image,
 } from "lucide-react";
 
 type MenuKey =
     | "products"
+    | "content"
     | "customers"
     | "shopOwners"
     | "orders"
@@ -81,6 +84,7 @@ const Sidebar = () => {
     const isActive = (path: string) => pathname === path;
 
     const isProductsSectionActive = pathname.startsWith("/dashboard/products");
+    const isContentSectionActive = pathname.startsWith("/dashboard/media");
     const isCustomersSectionActive =
         pathname.startsWith("/dashboard/customers") ||
         pathname.startsWith("/dashboard/customer-groups");
@@ -90,10 +94,10 @@ const Sidebar = () => {
 
     return (
         <aside
-            className={`${collapsed ? "w-24" : "w-72"} app-sidebar fixed left-0 top-0 z-40 flex h-screen flex-col transition-all duration-300`}
+            className={`${collapsed ? "w-24" : "w-72"
+                } app-sidebar fixed left-0 top-0 z-40 flex h-screen flex-col transition-all duration-300`}
         >
             <div className="flex h-full flex-col">
-                {/* Header */}
                 <div className="flex h-20 items-center justify-between border-b border-borderStrong px-5">
                     {!collapsed && (
                         <h2 className="app-text-sidebar text-[22px] font-bold tracking-tight">
@@ -111,7 +115,6 @@ const Sidebar = () => {
                     </button>
                 </div>
 
-                {/* Scrollable nav area */}
                 <div className="flex-1 overflow-visible">
                     <nav className="space-y-2 px-4 py-6">
                         <Link
@@ -155,6 +158,38 @@ const Sidebar = () => {
                                         href: "/dashboard/products/brands",
                                         label: "Brands",
                                         icon: <Store size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/products/manufacturers",
+                                        label: "Manufacturers",
+                                        icon: <Store size={16} />,
+                                    },
+                                ]}
+                            />
+                        </div>
+
+                        <div
+                            className="relative"
+                            onMouseEnter={() => setOpenMenu("content")}
+                            onMouseLeave={() => setOpenMenu(null)}
+                        >
+                            <div
+                                className={`sidebar-nav-item flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isContentSectionActive ? "active" : "app-text-sidebar-muted"
+                                    }`}
+                            >
+                                <FolderOpen size={18} className="shrink-0" />
+                                {!collapsed && <span>Content</span>}
+                            </div>
+
+                            <FlyoutMenu
+                                open={openMenu === "content"}
+                                collapsed={collapsed}
+                                isActive={isActive}
+                                items={[
+                                    {
+                                        href: "/dashboard/media",
+                                        label: "Media",
+                                        icon: <Image size={16} />,
                                     },
                                 ]}
                             />
@@ -320,7 +355,6 @@ const Sidebar = () => {
                     </nav>
                 </div>
 
-                {/* Footer */}
                 <div className="border-t border-borderStrong p-4">
                     <button
                         onClick={logout}

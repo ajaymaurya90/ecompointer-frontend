@@ -24,6 +24,7 @@ export interface ProductListParams {
 
     categoryIds?: string[];
     brandIds?: string[];
+    manufacturerIds?: string[];
 
     status?: "active" | "inactive" | "all";
     flags?: Array<"featured" | "free_shipping" | "clearance">;
@@ -43,7 +44,7 @@ export interface ProductListParams {
     salesFrom?: number;
     salesTo?: number;
 
-    sortBy?: "createdAt" | "name" | "productCode";
+    sortBy?: "createdAt" | "name" | "productCode" | "manufacturer";
     order?: "asc" | "desc";
 }
 
@@ -55,12 +56,22 @@ export async function getProducts(
             ...params,
             categoryIds: params.categoryIds?.join(","),
             brandIds: params.brandIds?.join(","),
+            manufacturerIds: params.manufacturerIds?.join(","),
             productTypes: params.productTypes?.join(","),
             flags: params.flags?.join(","),
         },
     });
 
     return response.data;
+}
+
+export async function getProductManufacturers(): Promise<ProductOption[]> {
+    const response = await api.get("/product-manufacturers/active-options");
+
+    return (response.data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+    }));
 }
 
 export async function getProductById(productId: string): Promise<Product> {

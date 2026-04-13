@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, Package2 } from "lucide-react";
+
 import ProductForm from "@/modules/products/components/ProductForm";
 import ProductVariantsTab from "@/modules/products/components/ProductVariantsTab";
 import ProductMediaTab from "@/modules/products/components/ProductMediaTab";
@@ -22,6 +24,7 @@ import {
     getProductBrands,
     getProductById,
     getProductCategories,
+    getProductManufacturers,
     getSuggestedProductCode,
     updateProduct,
 } from "@/modules/products/api/productApi";
@@ -43,6 +46,7 @@ const emptyForm: ProductFormData = {
     name: "",
     productCode: "",
     brandId: "",
+    manufacturerId: "",
     categoryId: "",
     categoryIds: [],
     description: "",
@@ -74,9 +78,9 @@ function TabButton({
         <button
             type="button"
             onClick={onClick}
-            className={`relative pb-4 text-sm font-medium transition ${active
-                    ? "text-primary"
-                    : "text-textSecondary hover:text-textPrimary"
+            className={`relative pb-4 pt-1 text-sm font-medium transition ${active
+                ? "text-primary"
+                : "text-textSecondary hover:text-textPrimary"
                 }`}
         >
             {label}
@@ -101,6 +105,7 @@ export default function ProductFormPage({
     const [form, setForm] = useState<ProductFormData>(emptyForm);
     const [brands, setBrands] = useState<ProductOption[]>([]);
     const [categories, setCategories] = useState<ProductOption[]>([]);
+    const [manufacturers, setManufacturers] = useState<ProductOption[]>([]);
     const [productName, setProductName] = useState("Create Product");
 
     const [variantEditorMode, setVariantEditorMode] =
@@ -109,6 +114,7 @@ export default function ProductFormPage({
         useState<ProductVariant | null>(null);
     const [variantSubmitting, setVariantSubmitting] = useState(false);
     const [variantRefreshKey, setVariantRefreshKey] = useState(0);
+    const [variantSubmitTrigger, setVariantSubmitTrigger] = useState(0);
 
     useEffect(() => {
         const requestedTab = searchParams.get("tab");
@@ -132,13 +138,15 @@ export default function ProductFormPage({
     useEffect(() => {
         const init = async () => {
             try {
-                const [brandOptions, categoryOptions] = await Promise.all([
+                const [brandOptions, categoryOptions, manufacturerOptions] = await Promise.all([
                     getProductBrands(),
                     getProductCategories(),
+                    getProductManufacturers(),
                 ]);
 
                 setBrands(brandOptions);
                 setCategories(categoryOptions);
+                setManufacturers(manufacturerOptions);
 
                 if (mode === "edit" && productId) {
                     const product: Product = await getProductById(productId);
@@ -161,6 +169,7 @@ export default function ProductFormPage({
                         name: product?.name ?? "",
                         productCode: product?.productCode ?? "",
                         brandId: product?.brandId ?? product?.brand?.id ?? "",
+                        manufacturerId: product?.manufacturerId ?? product?.manufacturer?.id ?? "",
                         categoryId: primaryCategoryId,
                         categoryIds: Array.from(
                             new Set(
@@ -261,6 +270,10 @@ export default function ProductFormPage({
 
             return next;
         });
+    };
+
+    const handleBackToProductList = () => {
+        router.push("/dashboard/products");
     };
 
     const handleCancel = () => {
@@ -391,6 +404,30 @@ export default function ProductFormPage({
         }
     };
 
+    const isVariantEditorOpen =
+        activeTab === "variants" && variantEditorMode !== null;
+
+    const handleHeaderCancel = () => {
+        if (isVariantEditorOpen) {
+            handleCancelVariantEditor();
+            return;
+        }
+
+        handleCancel();
+    };
+
+    const handleHeaderSave = () => {
+        if (isVariantEditorOpen) {
+            setVariantSubmitTrigger((prev) => prev + 1);
+            return;
+        }
+
+        void handleSave();
+    };
+
+    const headerSaveLabel = isVariantEditorOpen ? "Save Variant" : "Save Product";
+    const headerSaveDisabled = isVariantEditorOpen ? variantSubmitting : saving;
+
     const renderGeneralTab = () => {
         return (
             <div className="space-y-6">
@@ -398,41 +435,35 @@ export default function ProductFormPage({
                     form={form}
                     brands={brands}
                     categories={categories}
+                    manufacturers={manufacturers}
                     onChange={handleChange}
                 />
 
                 {mode === "edit" && productId ? (
                     <ProductMediaTab productId={productId} />
                 ) : (
-                    <div className="rounded-2xl border border-borderSoft bg-card p-8 shadow-sm">
-                        <h4 className="text-lg font-semibold text-textPrimary">
-                            Product Gallery
-                        </h4>
-                        <p className="mt-2 text-textSecondary">
-                            Save the product first before uploading media.
-                        </p>
+                    <div className="rounded-3xl border border-borderSoft bg-card p-10 shadow-sm">
+                        <div className="mx-auto flex max-w-md flex-col items-center text-center">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cardMuted ring-1 ring-borderSoft">
+                                <Package2 size={22} className="text-textSecondary" />
+                            </div>
+                            <h4 className="mt-4 text-lg font-semibold text-textPrimary">
+                                Product Gallery
+                            </h4>
+                            <p className="mt-2 text-textSecondary">
+                                Save the product first before uploading media.
+                            </p>
+                        </div>
                     </div>
                 )}
 
-                <div className="flex items-center justify-end gap-3">
-                    {mode === "edit" ? (
+                {mode === "edit" ? (
+                    <div className="flex items-center justify-end">
                         <Button variant="danger" onClick={handleDelete}>
-                            Delete
+                            Delete Product
                         </Button>
-                    ) : null}
-
-                    <Button variant="secondary" onClick={handleCancel}>
-                        Cancel
-                    </Button>
-
-                    <Button
-                        variant="primary"
-                        onClick={handleSave}
-                        disabled={saving}
-                    >
-                        {saving ? "Saving..." : "Save Product"}
-                    </Button>
-                </div>
+                    </div>
+                ) : null}
             </div>
         );
     };
@@ -440,58 +471,78 @@ export default function ProductFormPage({
     const renderVariantsTab = () => {
         if (mode === "create" || !productId) {
             return (
-                <div className="rounded-2xl border border-borderSoft bg-card p-8 shadow-sm">
-                    <h4 className="text-lg font-semibold text-textPrimary">
-                        Variants
-                    </h4>
-                    <p className="mt-2 text-textSecondary">
-                        Save the product first before adding variants.
-                    </p>
+                <div className="rounded-3xl border border-borderSoft bg-card p-10 shadow-sm">
+                    <div className="mx-auto max-w-md text-center">
+                        <h4 className="text-lg font-semibold text-textPrimary">
+                            Variants
+                        </h4>
+                        <p className="mt-2 text-textSecondary">
+                            Save the product first before adding variants.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        if (variantEditorMode) {
+            return (
+                <div className="space-y-6">
+                    <div className="flex items-center">
+                        <Button
+                            variant="secondary"
+                            leftIcon={<ChevronLeft size={16} />}
+                            onClick={handleCancelVariantEditor}
+                        >
+                            Back to Variant List
+                        </Button>
+                    </div>
+
+                    <div className="rounded-[28px] bg-infoSoft/40 p-1 ring-1 ring-info/10">
+                        <ProductVariantForm
+                            variant={editingVariant}
+                            defaultValues={getVariantDefaults()}
+                            onSubmit={handleSubmitVariant}
+                            onCancel={handleCancelVariantEditor}
+                            submitting={variantSubmitting}
+                            hideFooterActions
+                            submitTrigger={variantSubmitTrigger}
+                        />
+                    </div>
+
+                    {variantEditorMode === "edit" && editingVariant ? (
+                        <VariantMediaTab variantId={editingVariant.id} />
+                    ) : null}
                 </div>
             );
         }
 
         return (
-            <div className="space-y-6">
-                <ProductVariantsTab
-                    key={variantRefreshKey}
-                    productId={productId}
-                    onAddVariant={handleAddVariant}
-                    onEditVariant={handleEditVariant}
-                    defaultValues={{
-                        taxRate: form.taxRate,
-                        costPrice: form.costPrice,
-                        wholesaleNet: form.wholesaleNet,
-                        retailNet: form.retailNet,
-                        stock: 0,
-                        isActive: true,
-                    }}
-                />
-
-                {variantEditorMode ? (
-                    <ProductVariantForm
-                        variant={editingVariant}
-                        defaultValues={getVariantDefaults()}
-                        onSubmit={handleSubmitVariant}
-                        onCancel={handleCancelVariantEditor}
-                        submitting={variantSubmitting}
-                    />
-                ) : null}
-
-                {variantEditorMode === "edit" && editingVariant ? (
-                    <VariantMediaTab variantId={editingVariant.id} />
-                ) : null}
-            </div>
+            <ProductVariantsTab
+                key={variantRefreshKey}
+                productId={productId}
+                onAddVariant={handleAddVariant}
+                onEditVariant={handleEditVariant}
+                defaultValues={{
+                    taxRate: form.taxRate,
+                    costPrice: form.costPrice,
+                    wholesaleNet: form.wholesaleNet,
+                    retailNet: form.retailNet,
+                    stock: 0,
+                    isActive: true,
+                }}
+            />
         );
     };
 
     const renderSeoTab = () => {
         return (
-            <div className="rounded-2xl border border-borderSoft bg-card p-8 shadow-sm">
-                <h4 className="text-lg font-semibold text-textPrimary">SEO</h4>
-                <p className="mt-2 text-textSecondary">
-                    SEO settings will be added next.
-                </p>
+            <div className="rounded-3xl border border-borderSoft bg-card p-10 shadow-sm">
+                <div className="mx-auto max-w-md text-center">
+                    <h4 className="text-lg font-semibold text-textPrimary">SEO</h4>
+                    <p className="mt-2 text-textSecondary">
+                        SEO settings will be added next.
+                    </p>
+                </div>
             </div>
         );
     };
@@ -510,7 +561,7 @@ export default function ProductFormPage({
 
     if (loading) {
         return (
-            <div className="rounded-2xl border border-borderSoft bg-card p-6 text-textSecondary shadow-sm">
+            <div className="rounded-3xl border border-borderSoft bg-card p-6 text-textSecondary shadow-sm">
                 Loading product...
             </div>
         );
@@ -518,37 +569,46 @@ export default function ProductFormPage({
 
     return (
         <div className="space-y-6">
-            <div className="rounded-2xl border border-borderSoft bg-card px-6 py-5 shadow-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="space-y-1">
-                        <div className="text-sm text-textSecondary">
-                            Product settings
+            <div className="overflow-hidden rounded-[30px] border border-borderSoft bg-card shadow-sm">
+                <div className="bg-gradient-to-r from-card to-cardMuted/40 px-6 py-6">
+                    <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                        <div className="space-y-3">
+                            <button
+                                type="button"
+                                onClick={handleBackToProductList}
+                                className="inline-flex items-center gap-2 rounded-xl px-2 py-1 text-sm font-medium text-textSecondary transition hover:bg-cardMuted hover:text-textPrimary"
+                            >
+                                <ChevronLeft size={16} />
+                                Back to Product List
+                            </button>
+
+                            <div>
+                                <h2 className="text-3xl font-semibold tracking-tight text-textPrimary">
+                                    {mode === "create" ? "Create Product" : productName}
+                                </h2>
+                                <p className="mt-1 text-sm text-textSecondary">
+                                    Manage product details, variants, media, and future SEO settings.
+                                </p>
+                            </div>
                         </div>
-                        <h2 className="text-3xl font-semibold tracking-tight text-textPrimary">
-                            {mode === "create" ? "Create Product" : productName}
-                        </h2>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <Button variant="secondary" onClick={handleCancel}>
-                            Cancel
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Button variant="secondary" onClick={handleHeaderCancel}>
+                                {isVariantEditorOpen ? "Back to List" : "Cancel"}
+                            </Button>
 
-                        {activeTab === "general" ? (
                             <Button
                                 variant="primary"
-                                onClick={handleSave}
-                                disabled={saving}
+                                onClick={handleHeaderSave}
+                                disabled={headerSaveDisabled}
                             >
-                                {saving ? "Saving..." : "Save Product"}
+                                {headerSaveDisabled ? "Saving..." : headerSaveLabel}
                             </Button>
-                        ) : null}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="overflow-hidden rounded-2xl border border-borderSoft bg-card shadow-sm">
-                <div className="table-header px-6 pt-4">
+                <div className="border-t border-borderSoft px-6 pt-4">
                     <div className="flex items-center gap-8">
                         <TabButton
                             label="General"

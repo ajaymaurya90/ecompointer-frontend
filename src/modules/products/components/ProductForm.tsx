@@ -25,6 +25,7 @@ interface ProductFormProps {
     form: ProductFormData;
     brands: ProductOption[];
     categories: ProductOption[];
+    manufacturers: ProductOption[];
     onChange: (
         field: keyof ProductFormData,
         value: string | string[] | boolean
@@ -254,6 +255,7 @@ export default function ProductForm({
     form,
     brands,
     categories,
+    manufacturers,
     onChange,
 }: ProductFormProps) {
     const [categorySearch, setCategorySearch] = useState("");
@@ -307,6 +309,15 @@ export default function ProductForm({
                 value: brand.id,
             })),
         [brands]
+    );
+
+    const manufacturerOptions = useMemo(
+        () =>
+            manufacturers.map((m) => ({
+                label: m.name,
+                value: m.id,
+            })),
+        [manufacturers]
     );
 
     const productTypeOptions = useMemo(
@@ -496,7 +507,7 @@ export default function ProductForm({
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
                         <div>
                             <FieldLabel label="Brand" />
                             <AppSelect
@@ -532,6 +543,25 @@ export default function ProductForm({
                                 options={productTypeOptions}
                                 placeholder="Select product type"
                             />
+                        </div>
+                        <div>
+                            <FieldLabel
+                                label="Manufacturer"
+                                tooltip="Select the manufacturer who produces this product. This helps in supplier management and analytics."
+                            />
+
+                            {manufacturerOptions.length === 0 ? (
+                                <div className="rounded-xl bg-cardMuted px-4 py-3 text-sm text-textSecondary ring-1 ring-borderSoft">
+                                    No manufacturers found. Create one from the Manufacturers section.
+                                </div>
+                            ) : (
+                                <AppSelect
+                                    value={form.manufacturerId}
+                                    onChange={(value) => onChange("manufacturerId", value)}
+                                    options={manufacturerOptions}
+                                    placeholder="Select manufacturer"
+                                />
+                            )}
                         </div>
                     </div>
 
