@@ -6,8 +6,8 @@ type Props = {
     buyerType: BuyerType;
     items: CreateOrderLineItem[];
     currencyCode: string;
-    onQuantityChange: (productVariantId: string, quantity: number) => void;
-    onRemove: (productVariantId: string) => void;
+    onQuantityChange: (sellableProductId: string, quantity: number) => void;
+    onRemove: (sellableProductId: string) => void;
 };
 
 function formatCurrency(amount: number, currencyCode: string) {
@@ -63,7 +63,7 @@ export default function OrderItemsEditor({
 
                         <tbody>
                             {items.map((item) => (
-                                <tr key={item.productVariantId} className="border-b border-gray-100">
+                                <tr key={item.sellableProductId} className="border-b border-gray-100">
                                     <td className="px-5 py-4">
                                         <div className="font-medium text-gray-900">
                                             {item.productName}
@@ -83,7 +83,7 @@ export default function OrderItemsEditor({
                                             value={item.quantity}
                                             onChange={(e) =>
                                                 onQuantityChange(
-                                                    item.productVariantId,
+                                                    item.sellableProductId,
                                                     Number(e.target.value)
                                                 )
                                             }
@@ -102,7 +102,7 @@ export default function OrderItemsEditor({
                                     <td className="px-5 py-4">
                                         <button
                                             type="button"
-                                            onClick={() => onRemove(item.productVariantId)}
+                                            onClick={() => onRemove(item.sellableProductId)}
                                             className="rounded-xl border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
                                         >
                                             Remove

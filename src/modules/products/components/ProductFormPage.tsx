@@ -15,8 +15,8 @@ import type {
     ProductOption,
 } from "@/modules/products/types/product";
 import type {
-    ProductVariant,
-    ProductVariantFormData,
+    ChildProduct,
+    ChildProductFormData,
 } from "@/modules/products/api/productVariantApi";
 import {
     createProduct,
@@ -29,8 +29,8 @@ import {
     updateProduct,
 } from "@/modules/products/api/productApi";
 import {
-    createProductVariant,
-    updateProductVariant,
+    createChildProduct,
+    updateChildProduct,
 } from "@/modules/products/api/productVariantApi";
 import Button from "@/components/ui/Button";
 
@@ -51,9 +51,14 @@ const emptyForm: ProductFormData = {
     categoryIds: [],
     description: "",
     productType: "PHYSICAL",
+    currencyCode: "INR",
     taxRate: 18,
+    costGross: 0,
     costPrice: 0,
+    costNet: 0,
+    wholesaleGross: 0,
     wholesaleNet: 0,
+    retailGross: 0,
     retailNet: 0,
     isFeatured: false,
     isFreeShipping: false,
@@ -64,6 +69,33 @@ const emptyForm: ProductFormData = {
     deliveryTimeLabel: "",
     restockTimeDays: "",
 };
+
+function calculateNetFromGross(gross: number, taxRate: number) {
+    if (taxRate <= -100) {
+        return Number(gross.toFixed(2));
+    }
+
+    return Number((gross / (1 + taxRate / 100)).toFixed(2));
+}
+
+function getOptionLabel(options: ProductOption[], id: string) {
+    const visit = (items: ProductOption[]): string | null => {
+        for (const item of items) {
+            if (item.id === id) {
+                return item.name;
+            }
+
+            const childMatch = item.children?.length ? visit(item.children) : null;
+            if (childMatch) {
+                return childMatch;
+            }
+        }
+
+        return null;
+    };
+
+    return visit(options);
+}
 
 function TabButton({
     label,
@@ -111,7 +143,7 @@ export default function ProductFormPage({
     const [variantEditorMode, setVariantEditorMode] =
         useState<VariantEditorMode>(null);
     const [editingVariant, setEditingVariant] =
-        useState<ProductVariant | null>(null);
+        useState<ChildProduct | null>(null);
     const [variantSubmitting, setVariantSubmitting] = useState(false);
     const [variantRefreshKey, setVariantRefreshKey] = useState(0);
     const [variantSubmitTrigger, setVariantSubmitTrigger] = useState(0);
@@ -180,18 +212,73 @@ export default function ProductFormPage({
                         ),
                         description: product?.description ?? "",
                         productType: product?.productType ?? "PHYSICAL",
-                        taxRate: product?.taxRate ?? 18,
-                        costPrice: product?.costPrice ?? 0,
-                        wholesaleNet: product?.wholesaleNet ?? 0,
-                        retailNet: product?.retailNet ?? 0,
-                        isFeatured: product?.isFeatured ?? false,
-                        isFreeShipping: product?.isFreeShipping ?? false,
-                        isClearance: product?.isClearance ?? false,
-                        stock: product?.stock ?? 0,
-                        minOrderQuantity: product?.minOrderQuantity ?? 1,
-                        maxOrderQuantity: product?.maxOrderQuantity ?? "",
-                        deliveryTimeLabel: product?.deliveryTimeLabel ?? "",
-                        restockTimeDays: product?.restockTimeDays ?? "",
+                        currencyCode:
+                            product?.commercialEffective?.currencyCode ??
+                            product?.currencyCode ??
+                            "INR",
+                        taxRate: product?.commercialEffective?.taxRate ?? product?.taxRate ?? 18,
+                        costGross:
+                            product?.commercialEffective?.costGross ??
+                            product?.costGross ??
+                            product?.costGrossPrice ??
+                            0,
+                        costPrice:
+                            product?.commercialEffective?.costNet ??
+                            product?.costNet ??
+                            product?.costPrice ??
+                            0,
+                        costNet:
+                            product?.commercialEffective?.costNet ??
+                            product?.costNet ??
+                            product?.costPrice ??
+                            0,
+                        wholesaleGross:
+                            product?.commercialEffective?.wholesaleGross ??
+                            product?.wholesaleGross ??
+                            product?.wholesaleGrossPrice ??
+                            0,
+                        wholesaleNet:
+                            product?.commercialEffective?.wholesaleNet ??
+                            product?.wholesaleNet ??
+                            0,
+                        retailGross:
+                            product?.commercialEffective?.retailGross ??
+                            product?.retailGross ??
+                            product?.retailGrossPrice ??
+                            0,
+                        retailNet:
+                            product?.commercialEffective?.retailNet ??
+                            product?.retailNet ??
+                            0,
+                        isFeatured:
+                            product?.commercialEffective?.isFeatured ??
+                            product?.isFeatured ??
+                            false,
+                        isFreeShipping:
+                            product?.commercialEffective?.isFreeShipping ??
+                            product?.isFreeShipping ??
+                            false,
+                        isClearance:
+                            product?.commercialEffective?.isClearance ??
+                            product?.isClearance ??
+                            false,
+                        stock: product?.commercialEffective?.stock ?? product?.stock ?? 0,
+                        minOrderQuantity:
+                            product?.commercialEffective?.minOrderQuantity ??
+                            product?.minOrderQuantity ??
+                            1,
+                        maxOrderQuantity:
+                            product?.commercialEffective?.maxOrderQuantity ??
+                            product?.maxOrderQuantity ??
+                            "",
+                        deliveryTimeLabel:
+                            product?.commercialEffective?.deliveryTimeLabel ??
+                            product?.deliveryTimeLabel ??
+                            "",
+                        restockTimeDays:
+                            product?.commercialEffective?.restockTimeDays ??
+                            product?.restockTimeDays ??
+                            "",
                     });
 
                     setProductName(product?.name ?? "Edit Product");
@@ -230,8 +317,12 @@ export default function ProductFormPage({
         setForm((prev) => {
             const numericFields: Array<keyof ProductFormData> = [
                 "taxRate",
+                "costGross",
                 "costPrice",
+                "costNet",
+                "wholesaleGross",
                 "wholesaleNet",
+                "retailGross",
                 "retailNet",
                 "stock",
                 "minOrderQuantity",
@@ -308,6 +399,18 @@ export default function ProductFormPage({
 
         const payload: ProductFormData = {
             ...form,
+            costNet: calculateNetFromGross(form.costGross, form.taxRate),
+            costPrice: calculateNetFromGross(form.costGross, form.taxRate),
+            wholesaleNet: calculateNetFromGross(form.wholesaleGross, form.taxRate),
+            retailNet: calculateNetFromGross(form.retailGross, form.taxRate),
+            maxOrderQuantity:
+                form.maxOrderQuantity === "" || form.maxOrderQuantity === null
+                    ? null
+                    : Number(form.maxOrderQuantity),
+            restockTimeDays:
+                form.restockTimeDays === "" || form.restockTimeDays === null
+                    ? null
+                    : Number(form.restockTimeDays),
             categoryIds: Array.from(new Set([form.categoryId, ...form.categoryIds])),
         };
 
@@ -348,20 +451,42 @@ export default function ProductFormPage({
     };
 
     const getVariantDefaults = () => ({
+        currencyCode: form.currencyCode,
         taxRate: form.taxRate,
-        costPrice: form.costPrice,
-        wholesaleNet: form.wholesaleNet,
-        retailNet: form.retailNet,
+        costGross: form.costGross,
+        costPrice: calculateNetFromGross(form.costGross, form.taxRate),
+        costNet: calculateNetFromGross(form.costGross, form.taxRate),
+        wholesaleGross: form.wholesaleGross,
+        wholesaleNet: calculateNetFromGross(form.wholesaleGross, form.taxRate),
+        retailGross: form.retailGross,
+        retailNet: calculateNetFromGross(form.retailGross, form.taxRate),
+        stock: form.stock,
         isFeatured: form.isFeatured,
         isFreeShipping: form.isFreeShipping,
         isClearance: form.isClearance,
         minOrderQuantity: form.minOrderQuantity,
         maxOrderQuantity:
-            form.maxOrderQuantity === "" ? undefined : Number(form.maxOrderQuantity),
+            form.maxOrderQuantity === "" || form.maxOrderQuantity === null
+                ? null
+                : Number(form.maxOrderQuantity),
         deliveryTimeLabel: form.deliveryTimeLabel || undefined,
         restockTimeDays:
-            form.restockTimeDays === "" ? undefined : Number(form.restockTimeDays),
+            form.restockTimeDays === "" || form.restockTimeDays === null
+                ? null
+                : Number(form.restockTimeDays),
     });
+
+    const productLockedSummary = {
+        brand: getOptionLabel(brands, form.brandId) ?? "Selected on product",
+        manufacturer:
+            getOptionLabel(manufacturers, form.manufacturerId) ??
+            (form.manufacturerId ? "Selected on product" : "Not selected"),
+        category:
+            getOptionLabel(categories, form.categoryId) ?? "Selected on product",
+        productType: form.productType,
+        productName: form.name,
+        productDescription: form.description,
+    };
 
     const handleAddVariant = () => {
         setEditingVariant(null);
@@ -369,7 +494,7 @@ export default function ProductFormPage({
         setActiveTab("variants");
     };
 
-    const handleEditVariant = (variant: ProductVariant) => {
+    const handleEditVariant = (variant: ChildProduct) => {
         setEditingVariant(variant);
         setVariantEditorMode("edit");
         setActiveTab("variants");
@@ -380,16 +505,16 @@ export default function ProductFormPage({
         setVariantEditorMode(null);
     };
 
-    const handleSubmitVariant = async (data: ProductVariantFormData) => {
+    const handleSubmitVariant = async (data: ChildProductFormData) => {
         if (!productId) return;
 
         setVariantSubmitting(true);
 
         try {
             if (variantEditorMode === "edit" && editingVariant) {
-                await updateProductVariant(productId, editingVariant.id, data);
+                await updateChildProduct(productId, editingVariant.id, data);
             } else {
-                await createProductVariant(productId, data);
+                await createChildProduct(productId, data);
             }
 
             setEditingVariant(null);
@@ -487,20 +612,11 @@ export default function ProductFormPage({
         if (variantEditorMode) {
             return (
                 <div className="space-y-6">
-                    <div className="flex items-center">
-                        <Button
-                            variant="secondary"
-                            leftIcon={<ChevronLeft size={16} />}
-                            onClick={handleCancelVariantEditor}
-                        >
-                            Back to Variant List
-                        </Button>
-                    </div>
-
                     <div className="rounded-[28px] bg-infoSoft/40 p-1 ring-1 ring-info/10">
                         <ProductVariantForm
                             variant={editingVariant}
                             defaultValues={getVariantDefaults()}
+                            lockedProductFields={productLockedSummary}
                             onSubmit={handleSubmitVariant}
                             onCancel={handleCancelVariantEditor}
                             submitting={variantSubmitting}
@@ -510,7 +626,7 @@ export default function ProductFormPage({
                     </div>
 
                     {variantEditorMode === "edit" && editingVariant ? (
-                        <VariantMediaTab variantId={editingVariant.id} />
+                        <VariantMediaTab childProductId={editingVariant.id} />
                     ) : null}
                 </div>
             );
@@ -523,11 +639,16 @@ export default function ProductFormPage({
                 onAddVariant={handleAddVariant}
                 onEditVariant={handleEditVariant}
                 defaultValues={{
+                    currencyCode: form.currencyCode,
                     taxRate: form.taxRate,
-                    costPrice: form.costPrice,
-                    wholesaleNet: form.wholesaleNet,
-                    retailNet: form.retailNet,
-                    stock: 0,
+                    costGross: form.costGross,
+                    costPrice: calculateNetFromGross(form.costGross, form.taxRate),
+                    costNet: calculateNetFromGross(form.costGross, form.taxRate),
+                    wholesaleGross: form.wholesaleGross,
+                    wholesaleNet: calculateNetFromGross(form.wholesaleGross, form.taxRate),
+                    retailGross: form.retailGross,
+                    retailNet: calculateNetFromGross(form.retailGross, form.taxRate),
+                    stock: form.stock,
                     isActive: true,
                 }}
             />
@@ -619,7 +740,12 @@ export default function ProductFormPage({
                         <TabButton
                             label="Variants"
                             active={activeTab === "variants"}
-                            onClick={() => setActiveTab("variants")}
+                            onClick={() => {
+                                setActiveTab("variants");
+                                if (variantEditorMode) {
+                                    handleCancelVariantEditor();
+                                }
+                            }}
                         />
 
                         <TabButton

@@ -6,6 +6,7 @@ interface Props {
 }
 
 export default function ProductCard({ product }: Props) {
+    const productName = product.name || product.productCode || "Product";
     const primaryImage =
         product.media?.find((m) => m.isPrimary)?.url ||
         product.media?.[0]?.url ||
@@ -24,12 +25,12 @@ export default function ProductCard({ product }: Props) {
         <div className="rounded-3xl app-card interactive-card p-4">
             <img
                 src={primaryImage}
-                alt={product.name}
+                alt={productName}
                 className="h-40 w-full object-cover rounded-2xl mb-3"
             />
 
             <h3 className="text-lg font-semibold app-text-primary">
-                {product.name}
+                {productName}
             </h3>
 
             <p className="app-text-secondary mt-1">

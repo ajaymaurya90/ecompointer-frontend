@@ -1,228 +1,185 @@
-# EcomPointer Admin Panel (Next.js)
+# EcomPointer Admin Frontend
 
-EcomPointer Admin Panel is a scalable SaaS dashboard built with Next.js for multi-brand garment management.
+Next.js admin dashboard for Brand Owners using EcomPointer.
 
-This frontend application allows Brand Owners to securely manage products, variants, and future business modules such as inventory, orders, and retail operations.
+This app is the backoffice UI for managing catalog, media, customers, shop owners, orders, business settings, and storefront configuration. It consumes the NestJS backend API in `../ecompointer-backend`.
 
-The project is structured for long-term SaaS scalability using role-based access control and modular architecture.
+## Workspace Role
 
----
+EcomPointer is split into three projects:
 
-## Project Scope
+- `ecompointer-backend`: API, Prisma schema, PostgreSQL data model, uploads, and business rules.
+- `ecompointer-frontend`: Brand Owner admin dashboard.
+- `ecompointer-storefront`: Public customer storefront.
 
-This repository contains the **frontend admin panel only**, built with Next.js.
+## Tech Stack
 
-It integrates with a separate backend API that provides:
-
-- Authentication
-- Role validation
-- Product data
-- Pagination metadata
-
-The frontend is designed to consume structured API responses and maintain scalable state management.
-
----
-
-## Technology Stack
-
-- Next.js (App Router)
+- Next.js 16 App Router
+- React 19
 - TypeScript
-- Zustand (State Management)
-- Axios (API Layer with interceptors)
-- Tailwind CSS
+- Tailwind CSS v4
+- Zustand
+- Axios
+- React Hook Form
+- Zod
+- Radix UI
+- lucide-react
+- Storybook and Vitest setup
 
----
+## Main Areas
 
-## Authentication & Access Control Architecture
+### Authentication
 
-The system implements a structured JWT-based authentication flow with refresh handling and role restrictions.
+- Login page
+- In-memory access token with Zustand
+- Refresh-token cookie recovery through `/auth/refresh`
+- Axios interceptor for bearer token injection and one retry after refresh
+- Protected dashboard layout
+- Brand Owner role access for dashboard routes
 
-### Authentication Flow
+### Dashboard Shell
 
-- User logs in with email and password.
-- Backend returns:
-  - Access Token (JWT) in response body.
-  - Refresh Token stored as HTTP-only cookie.
-- Access token is stored in frontend state (Zustand).
-- Axios interceptor attaches the access token to all protected API requests.
-- When access token expires:
-  - Axios interceptor automatically calls the refresh endpoint.
-  - Backend validates refresh token from cookie.
-  - New access token is issued.
-  - Original request is retried automatically.
-- If refresh fails:
-  - User is logged out.
-  - Redirected to login page.
+- Sidebar navigation
+- Top navigation
+- Dark/light theme toggle
+- Global search dropdown
+- Shared layout components: page shell, page header, data panel, common UI controls
 
-### Current Access Control Rules
+### Products
 
-- ProtectedRoute component restricts dashboard access.
-- Role-based restriction implemented on frontend.
-- Dashboard currently restricted to: `BRAND_OWNER`.
-- Routes protected under:
-  - `/dashboard`
-  - `/dashboard/products`
-- Unauthorized users are redirected to `/login`.
+- Product listing with filters, pagination, and sorting
+- Product create/update flow
+- Product details
+- Category tree and category product assignments
+- Product brands
+- Product manufacturers
+- Product variants
+- Variant generator
+- Product and variant media tabs
+- Product code suggestion
+- Order product search integration
 
-This structure prevents unauthorized dashboard access and supports future multi-role expansion.
+### Media
 
----
+- Media library
+- Folder tree
+- Upload flow
+- Grid/list browsing
+- Media picker modal
+- Product/variant media assignment
 
-## Role System (Frontend Awareness)
+### Customers
 
-Roles currently recognized by frontend:
+- Customer list, create, detail, and edit pages
+- Address management
+- Business profile management
+- Customer groups
+- Group member management
 
-- BRAND_OWNER
-- SHOP_OWNER (structure ready)
-- ADMIN (future expansion)
+### Shop Owners
 
-Role validation is enforced through the ProtectedRoute wrapper.
+- Shop Owner list, create, and detail pages
+- Link existing Shop Owner
+- Status and Brand Owner link visibility
+- Order search integration
 
----
+### Orders
 
-## Product Module (Current Implementation)
+- Order list
+- Guided order creation for customers and shop owners
+- Product search and cart editor
+- Buyer and address selection
+- Order detail page
+- Status actions and cancellation
+- Payment modal and payments card
 
-### Features Implemented
+### Settings
 
-- Product listing page at `/dashboard/products`
-- Zustand product store
-- Pagination-ready state structure:
-  - products
-  - total
-  - page
-  - lastPage
-  - loading
-  - error
-- Loading skeleton UI
-- Error handling
-- Clean separation between layout and feature pages
+- Profile settings
+- Brand Owner location
+- Language settings
+- Service area settings
+- Storefront settings
+- Storefront domain management
+- Shop order rules through Brand Owner APIs
 
-### API Response Mapping
+### Global Search
 
-Frontend expects API response structure:
+The top navigation searches backend `/search` across:
 
+- Products
+- Customers
+- Orders
+- Shop Owners
 
-{
-data: Product[],
-meta: {
-total: number,
-page: number,
-lastPage: number
-}
-}
+## Environment
 
+Create `.env.local` in this project:
 
-Store mapping:
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
 
-- `response.data.data` → products
-- `response.data.meta` → pagination state
+## Development
 
-The architecture supports large product catalogs without structural changes.
+Install dependencies:
 
----
+```bash
+npm install
+```
 
-## Dashboard Routing Architecture
+Run the admin frontend:
 
-Implemented routes:
+```bash
+npm run dev
+```
 
-- `/dashboard` (Overview page)
-- `/dashboard/products` (Product listing)
+The app defaults to:
 
-Shared layout:
+```text
+http://localhost:3000
+```
 
-- Sidebar
-- Top Navigation
-- ProtectedRoute wrapper
+The backend should be running at:
 
-Layout is implemented in:
+```text
+http://localhost:3001
+```
 
+## Scripts
 
-src/app/dashboard/layout.tsx
+```bash
+npm run dev             # Next dev server
+npm run build           # Production build
+npm run start           # Start production server
+npm run lint            # ESLint
+npm run storybook       # Storybook dev server
+npm run build-storybook # Build Storybook
+```
 
+## Auth Flow
 
-All dashboard routes automatically inherit layout and access restrictions.
+1. User logs in through `/auth/login`.
+2. Backend returns an access token and sets the refresh token as an HTTP-only cookie.
+3. Frontend stores the access token in Zustand.
+4. Axios attaches `Authorization: Bearer <token>` to API calls.
+5. On `401`, Axios calls `/auth/refresh` with credentials.
+6. If refresh succeeds, the original request is retried.
+7. If refresh fails, auth state is cleared.
 
----
+## Current Status
 
-## Folder Structure
+The admin frontend covers most current backend domains and is usable as the Brand Owner control panel. Areas that should be cleaned up next:
 
+- Auth role typing should match backend enum values like `BRAND_OWNER`.
+- Logout should use the current Zustand token instead of reading an old localStorage key.
+- Add or remove the `/unauthorized` route referenced by `ProtectedRoute`.
+- Normalize older hardcoded `white/slate` surfaces to shared theme tokens.
+- Reduce `any` usage and align frontend types with backend response DTOs.
+- Fix React hook lint issues and Storybook import warnings.
+- Update image handling where Next warns about raw `<img>` usage.
 
-src/
-│
-├── app/
-│ ├── dashboard/
-│ │ ├── layout.tsx
-│ │ ├── page.tsx
-│ │ └── products/
-│ │ └── page.tsx
-│ └── login/
-│
-├── components/
-│ ├── Dashboard/
-│ │ ├── Sidebar.tsx
-│ │ └── TopNav.tsx
-│ ├── Product/
-│ │ ├── ProductCard.tsx
-│ │ └── ProductSkeleton.tsx
-│ └── ProtectedRoute.tsx
-│
-├── store/
-│ ├── authStore.ts
-│ └── productStore.ts
-│
-├── lib/
-│ ├── api.ts
-│ └── auth.ts
+## Related Projects
 
-
-Architecture principle:
-
-- Routing logic → `app/`
-- Reusable UI → `components/`
-- State management → `store/`
-- API abstraction → `lib/`
-
----
-
-## Security Highlights
-
-- Refresh token stored in HTTP-only cookie (not accessible via JavaScript)
-- Automatic token refresh handling
-- Logout on refresh failure
-- Role-based route restriction
-- Interceptor retry protection to prevent infinite loops
-
----
-
-## Current Milestone
-
-Version: v0.1
-
-Completed:
-
-- Authentication flow with refresh logic
-- Role-based dashboard protection
-- Structured dashboard layout
-- Product listing with pagination-ready state
-- Clean modular architecture
-
-The system is stable and ready for feature expansion.
-
----
-
-## Next Planned Features
-
-- Product Create (UI + API integration)
-- Product Update
-- Product Delete
-- Variant Management UI
-- Pagination Controls (UI)
-- Dashboard statistics overview
-- Order management module
-- Inventory tracking
-
----
-
-## Purpose
-
-This admin panel is being developed as part of a scalable SaaS system intended to support multi-brand garment businesses with centralized operational control.
+- Backend API: `../ecompointer-backend`
+- Public storefront: `../ecompointer-storefront`

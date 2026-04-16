@@ -75,8 +75,9 @@ export default function ProductsPageContainer() {
     };
 
     const handleDeleteProduct = async (product: Product) => {
+        const productName = product.name || product.productCode || "Product";
         const confirmed = window.confirm(
-            `Are you sure you want to delete "${product.name}"?`
+            `Are you sure you want to delete "${productName}"?`
         );
 
         if (!confirmed) return;

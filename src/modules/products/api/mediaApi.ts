@@ -5,6 +5,7 @@ export type MediaType = "THUMBNAIL" | "GALLERY" | "ZOOM" | "VIDEO";
 export interface ProductMediaItem {
     id: string;
     productId?: string | null;
+    childProductId?: string | null;
     variantId?: string | null;
     url: string;
     altText?: string | null;
@@ -20,6 +21,7 @@ export interface ProductMediaItem {
 
 export interface CreateMediaPayload {
     productId?: string;
+    childProductId?: string;
     variantId?: string;
     url: string;
     altText?: string;
@@ -54,6 +56,8 @@ export async function getVariantMedia(
     const response = await api.get(`/media/variant/${variantId}`);
     return response.data?.data ?? response.data ?? [];
 }
+
+export const getChildProductMedia = getVariantMedia;
 
 export async function createMedia(
     payload: CreateMediaPayload
@@ -106,6 +110,8 @@ export async function uploadVariantImage(
     return response.data?.data ?? response.data;
 }
 
+export const uploadChildProductImage = uploadVariantImage;
+
 export async function createVariantMediaByUrl(
     variantId: string,
     payload: {
@@ -125,3 +131,5 @@ export async function createVariantMediaByUrl(
         sortOrder: payload.sortOrder,
     });
 }
+
+export const createChildProductMediaByUrl = createVariantMediaByUrl;

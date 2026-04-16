@@ -7,13 +7,20 @@ export interface VariantGeneratorAttributeInput {
 
 export interface GenerateProductVariantsPayload {
     attributes: VariantGeneratorAttributeInput[];
-    taxRate?: number;
-    costPrice?: number;
-    wholesaleNet?: number;
-    retailNet?: number;
-    stock: number;
+    currencyCode?: string | null;
+    taxRate?: number | null;
+    costGross?: number | null;
+    costNet?: number | null;
+    costPrice?: number | null;
+    wholesaleGross?: number | null;
+    wholesaleNet?: number | null;
+    retailGross?: number | null;
+    retailNet?: number | null;
+    stock?: number | null;
     isActive?: boolean;
 }
+
+export type GenerateChildProductsPayload = GenerateProductVariantsPayload;
 
 export interface GenerateProductVariantsResponse {
     createdCount: number;
@@ -24,7 +31,10 @@ export interface GenerateProductVariantsResponse {
         sku: string;
         size?: string | null;
         color?: string | null;
+        currencyCode?: string;
         taxRate: number;
+        costGross?: number;
+        costNet?: number;
         costPrice: number;
         wholesaleNet: number;
         wholesaleGross: number;
@@ -41,6 +51,8 @@ export interface GenerateProductVariantsResponse {
     }>;
 }
 
+export type GenerateChildProductsResponse = GenerateProductVariantsResponse;
+
 export async function generateProductVariants(
     productId: string,
     payload: GenerateProductVariantsPayload
@@ -52,3 +64,5 @@ export async function generateProductVariants(
 
     return response.data?.data ?? response.data;
 }
+
+export const generateChildProducts = generateProductVariants;

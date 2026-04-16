@@ -195,7 +195,7 @@ export default function OrderCreatePage() {
             discountAmount,
             notes,
             items: items.map((item) => ({
-                productVariantId: item.productVariantId,
+                productVariantId: item.sellableProductId,
                 quantity: item.quantity,
             })),
         };
@@ -273,7 +273,7 @@ export default function OrderCreatePage() {
     function handleAddItem(newItem: CreateOrderLineItem) {
         setItems((prev) => {
             const existing = prev.find(
-                (item) => item.productVariantId === newItem.productVariantId
+                (item) => item.sellableProductId === newItem.sellableProductId
             );
 
             if (existing) {
@@ -285,10 +285,10 @@ export default function OrderCreatePage() {
     }
 
     // Update quantity of a single line item.
-    function handleQuantityChange(productVariantId: string, quantity: number) {
+    function handleQuantityChange(sellableProductId: string, quantity: number) {
         setItems((prev) =>
             prev.map((item) =>
-                item.productVariantId === productVariantId
+                item.sellableProductId === sellableProductId
                     ? recalculateLine(item, quantity)
                     : item
             )
@@ -296,9 +296,9 @@ export default function OrderCreatePage() {
     }
 
     // Remove one line item from the cart.
-    function handleRemoveItem(productVariantId: string) {
+    function handleRemoveItem(sellableProductId: string) {
         setItems((prev) =>
-            prev.filter((item) => item.productVariantId !== productVariantId)
+            prev.filter((item) => item.sellableProductId !== sellableProductId)
         );
     }
 

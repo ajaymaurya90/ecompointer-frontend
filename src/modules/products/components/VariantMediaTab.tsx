@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-    deleteVariantMediaLink,
-    getVariantMedia,
-    updateVariantMediaLink,
-    uploadVariantMedia,
+    deleteChildProductMediaLink,
+    getChildProductMedia,
+    updateChildProductMediaLink,
+    uploadChildProductMedia,
     type VariantMediaListResponse,
 } from "@/modules/products/api/productVariantApi";
 import type { ProductMediaItem } from "@/modules/products/types/product";
@@ -23,11 +23,11 @@ import { assignMediaToVariant } from "@/modules/media/api/mediaApi";
 import type { MediaLibraryItem } from "@/modules/media/types/media";
 
 interface VariantMediaTabProps {
-    variantId: string;
+    childProductId: string;
 }
 
 export default function VariantMediaTab({
-    variantId,
+    childProductId,
 }: VariantMediaTabProps) {
     const [mediaItems, setMediaItems] = useState<ProductMediaItem[]>([]);
     const [source, setSource] =
@@ -44,7 +44,7 @@ export default function VariantMediaTab({
     const loadMedia = async () => {
         try {
             setLoading(true);
-            const response = await getVariantMedia(variantId, 1, 100);
+            const response = await getChildProductMedia(childProductId, 1, 100);
             setMediaItems(response.data || []);
             setSource(response.source);
         } catch (error) {
@@ -57,7 +57,7 @@ export default function VariantMediaTab({
 
     useEffect(() => {
         void loadMedia();
-    }, [variantId]);
+    }, [childProductId]);
 
     const primaryItem = useMemo(
         () => mediaItems.find((item) => item.isPrimary) || null,
@@ -94,7 +94,7 @@ export default function VariantMediaTab({
 
         try {
             for (const file of files) {
-                await uploadVariantMedia(variantId, file);
+                await uploadChildProductMedia(childProductId, file);
             }
 
             await loadMedia();
@@ -115,7 +115,7 @@ export default function VariantMediaTab({
 
         try {
             for (const item of selectedItems) {
-                await assignMediaToVariant(variantId, {
+                await assignMediaToVariant(childProductId, {
                     mediaAssetId: item.id,
                 });
             }
@@ -135,7 +135,7 @@ export default function VariantMediaTab({
         setSavingPrimaryId(item.id);
 
         try {
-            await updateVariantMediaLink(item.id, {
+            await updateChildProductMediaLink(item.id, {
                 isPrimary: true,
             });
             await loadMedia();
@@ -157,7 +157,7 @@ export default function VariantMediaTab({
         setDeletingId(item.id);
 
         try {
-            await deleteVariantMediaLink(item.id);
+            await deleteChildProductMediaLink(item.id);
             await loadMedia();
         } catch (error: any) {
             console.error(error);

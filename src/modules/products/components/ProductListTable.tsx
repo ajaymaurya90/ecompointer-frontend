@@ -177,9 +177,13 @@ export default function ProductListTable({
                                                     />
                                                 )}
 
-                                                <span className="truncate font-medium text-textPrimary">
-                                                    {product.name}
-                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onEdit(product)}
+                                                    className="truncate text-left font-medium text-textPrimary transition hover:text-primary hover:underline"
+                                                >
+                                                    {product.name || product.productCode || "Product"}
+                                                </button>
                                             </div>
                                         </div>
                                     </td>

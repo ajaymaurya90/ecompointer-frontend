@@ -49,13 +49,39 @@ export interface ProductMediaListResponse {
     };
 }
 
-export interface ProductVariant {
+export interface ChildProduct {
     id: string;
+    parentId?: string | null;
+    productId?: string;
+    sku?: string | null;
+    productCode?: string | null;
+    variantLabel?: string | null;
+    name?: string | null;
+    description?: string | null;
+    effectiveName?: string | null;
+    effectiveDescription?: string | null;
+    contentSource?: {
+        name: CommercialFieldSource;
+        description: CommercialFieldSource;
+    };
     retailGross: number;
+    wholesaleGross?: number;
+    retailNet?: number;
+    wholesaleNet?: number;
+    costGross?: number;
+    costNet?: number;
+    taxRate?: number;
+    currencyCode?: string;
     stock: number;
-    size?: string;
-    color?: string;
+    size?: string | null;
+    color?: string | null;
+    isActive?: boolean;
+    commercialSource?: CommercialSourceMap;
+    commercialRaw?: VariantCommercialRaw;
+    commercialEffective?: ProductCommercialValues;
 }
+
+export type ProductVariant = ChildProduct;
 
 export interface ProductBrand {
     id: string;
@@ -119,9 +145,14 @@ export interface ProductFormData {
 
     productType: ProductType;
 
+    currencyCode: string;
     taxRate: number;
+    costGross: number;
     costPrice: number;
+    costNet: number;
+    wholesaleGross: number;
     wholesaleNet: number;
+    retailGross: number;
     retailNet: number;
 
     stock: number;
@@ -131,16 +162,49 @@ export interface ProductFormData {
     isClearance: boolean;
 
     minOrderQuantity: number;
-    maxOrderQuantity: number | "";
+    maxOrderQuantity: number | "" | null;
     deliveryTimeLabel: string;
-    restockTimeDays: number | "";
+    restockTimeDays: number | "" | null;
 }
+
+export interface ProductCommercialValues {
+    currencyCode: string;
+    taxRate: number;
+    costGross: number;
+    costNet: number;
+    wholesaleGross: number;
+    wholesaleNet: number;
+    retailGross: number;
+    retailNet: number;
+    stock: number;
+    isFeatured: boolean;
+    isFreeShipping: boolean;
+    isClearance: boolean;
+    minOrderQuantity: number;
+    maxOrderQuantity: number | null;
+    deliveryTimeLabel: string | null;
+    restockTimeDays: number | null;
+}
+
+export type CommercialFieldSource = "PRODUCT" | "VARIANT";
+
+export type CommercialSourceMap = Record<
+    keyof ProductCommercialValues,
+    CommercialFieldSource
+>;
+
+export type VariantCommercialRaw = {
+    [K in keyof ProductCommercialValues]: ProductCommercialValues[K] | null;
+};
 
 export interface Product {
     id: string;
-    name: string;
+    parentId?: string | null;
+    name: string | null;
     productCode: string;
-    description?: string;
+    sku?: string | null;
+    variantLabel?: string | null;
+    description?: string | null;
 
     brandId?: string;
     manufacturerId?: string | null;
@@ -157,9 +221,14 @@ export interface Product {
 
     productType?: ProductType;
 
+    currencyCode?: string;
     taxRate?: number;
+    costGross?: number;
+    costNet?: number;
     costPrice?: number;
+    wholesaleGross?: number;
     wholesaleNet?: number;
+    retailGross?: number;
     retailNet?: number;
 
     costGrossPrice?: number;
@@ -177,10 +246,14 @@ export interface Product {
     deliveryTimeLabel?: string | null;
     restockTimeDays?: number | null;
 
+    commercialRaw?: ProductCommercialValues | null;
+    commercialEffective?: ProductCommercialValues;
+
     hasVariants?: boolean;
+    children?: ChildProduct[];
 
     media: ProductMedia[];
-    variants: ProductVariant[];
+    variants: ChildProduct[];
     totalStock?: number;
     variantCount?: number;
     isActive?: boolean;

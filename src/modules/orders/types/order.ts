@@ -133,9 +133,11 @@ export interface OrderDetailShopOwner {
     shopSlug: string;
 }
 
-export interface OrderDetailVariantRef {
+export interface OrderDetailSellableProductRef {
     id: string;
+    productCode?: string | null;
     sku: string;
+    variantLabel?: string | null;
     size?: string | null;
     color?: string | null;
     taxRate: number;
@@ -148,7 +150,7 @@ export interface OrderDetailItem {
     orderId: string;
     orderSellerId?: string | null;
     brandOwnerId: string;
-    productVariantId: string;
+    sellableProductId?: string | null;
     productId?: string | null;
     productName: string;
     productCode?: string | null;
@@ -163,7 +165,7 @@ export interface OrderDetailItem {
     lineTotal: string;
     createdAt: string;
     updatedAt: string;
-    productVariant: OrderDetailVariantRef | null;
+    sellableProduct: OrderDetailSellableProductRef | null;
 }
 
 export interface OrderPaymentItem {
@@ -309,7 +311,7 @@ export interface OrderSearchProductItem {
 
 export interface CreateOrderLineItem {
     brandOwnerId: string;
-    productVariantId: string;
+    sellableProductId: string;
     productId: string;
     productName: string;
     productCode: string;
@@ -341,6 +343,7 @@ export interface CreateOrderPayload {
     discountAmount?: string;
     notes?: string;
     items: {
+        // Backend keeps this field name as a compatibility alias for child Product id.
         productVariantId: string;
         quantity: number;
     }[];

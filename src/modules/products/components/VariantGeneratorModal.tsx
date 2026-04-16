@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import * as Select from "@radix-ui/react-select";
 import {
-    generateProductVariants,
-    type GenerateProductVariantsPayload,
+    generateChildProducts,
+    type GenerateChildProductsPayload,
 } from "@/modules/products/api/productVariantGeneratorApi";
 import { Check, ChevronDown, Plus, Trash2, X } from "lucide-react";
 import Button from "@/components/ui/Button";
@@ -12,15 +12,28 @@ import Button from "@/components/ui/Button";
 interface VariantGeneratorModalProps {
     productId: string;
     defaultValues: {
+        currencyCode?: string;
         taxRate: number;
+        costGross: number;
         costPrice: number;
+        costNet?: number;
+        wholesaleGross: number;
         wholesaleNet: number;
+        retailGross: number;
         retailNet: number;
         stock?: number;
         isActive?: boolean;
     };
     onClose: () => void;
     onGenerated: () => Promise<void> | void;
+}
+
+function calculateNetFromGross(gross: number, taxRate: number) {
+    if (taxRate <= -100) {
+        return Number(gross.toFixed(2));
+    }
+
+    return Number((gross / (1 + taxRate / 100)).toFixed(2));
 }
 
 interface AttributeRow {
@@ -123,18 +136,18 @@ export default function VariantGeneratorModal({
     ]);
 
     const [taxRate, setTaxRate] = useState(defaultValues.taxRate ?? 18);
-    const [costPrice, setCostPrice] = useState(defaultValues.costPrice ?? 0);
-    const [wholesaleNet, setWholesaleNet] = useState(defaultValues.wholesaleNet ?? 0);
-    const [retailNet, setRetailNet] = useState(defaultValues.retailNet ?? 0);
+    const [costGross, setCostGross] = useState(defaultValues.costGross ?? 0);
+    const [wholesaleGross, setWholesaleGross] = useState(defaultValues.wholesaleGross ?? 0);
+    const [retailGross, setRetailGross] = useState(defaultValues.retailGross ?? 0);
     const [stock, setStock] = useState(defaultValues.stock ?? 0);
     const [isActive, setIsActive] = useState(defaultValues.isActive ?? true);
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         setTaxRate(defaultValues.taxRate ?? 18);
-        setCostPrice(defaultValues.costPrice ?? 0);
-        setWholesaleNet(defaultValues.wholesaleNet ?? 0);
-        setRetailNet(defaultValues.retailNet ?? 0);
+        setCostGross(defaultValues.costGross ?? 0);
+        setWholesaleGross(defaultValues.wholesaleGross ?? 0);
+        setRetailGross(defaultValues.retailGross ?? 0);
         setStock(defaultValues.stock ?? 0);
         setIsActive(defaultValues.isActive ?? true);
     }, [defaultValues]);
@@ -218,11 +231,20 @@ export default function VariantGeneratorModal({
             return;
         }
 
-        const payload: GenerateProductVariantsPayload = {
+        const costNet = calculateNetFromGross(costGross, taxRate);
+        const wholesaleNet = calculateNetFromGross(wholesaleGross, taxRate);
+        const retailNet = calculateNetFromGross(retailGross, taxRate);
+
+        const payload: GenerateChildProductsPayload = {
             attributes: parsedAttributes,
+            currencyCode: defaultValues.currencyCode ?? "INR",
             taxRate,
-            costPrice,
+            costGross,
+            costNet,
+            costPrice: costNet,
+            wholesaleGross,
             wholesaleNet,
+            retailGross,
             retailNet,
             stock,
             isActive,
@@ -231,7 +253,7 @@ export default function VariantGeneratorModal({
         setSubmitting(true);
 
         try {
-            const result = await generateProductVariants(productId, payload);
+            const result = await generateChildProducts(productId, payload);
 
             const messageParts = [`${result.createdCount} variant(s) created`];
 
@@ -376,45 +398,45 @@ export default function VariantGeneratorModal({
 
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-textPrimary">
-                                        Cost Price
+                                        Cost Gross
                                     </label>
                                     <TextInput
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        value={costPrice}
+                                        value={costGross}
                                         onChange={(value) =>
-                                            setCostPrice(Number(value) || 0)
+                                            setCostGross(Number(value) || 0)
                                         }
                                     />
                                 </div>
 
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-textPrimary">
-                                        Wholesale Net
+                                        Wholesale Gross
                                     </label>
                                     <TextInput
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        value={wholesaleNet}
+                                        value={wholesaleGross}
                                         onChange={(value) =>
-                                            setWholesaleNet(Number(value) || 0)
+                                            setWholesaleGross(Number(value) || 0)
                                         }
                                     />
                                 </div>
 
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-textPrimary">
-                                        Retail Net
+                                        Retail Gross
                                     </label>
                                     <TextInput
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        value={retailNet}
+                                        value={retailGross}
                                         onChange={(value) =>
-                                            setRetailNet(Number(value) || 0)
+                                            setRetailGross(Number(value) || 0)
                                         }
                                     />
                                 </div>

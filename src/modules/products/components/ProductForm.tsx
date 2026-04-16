@@ -120,6 +120,63 @@ function ReadonlyValue({
     );
 }
 
+function PricePairCard({
+    title,
+    grossValue,
+    netValue,
+    onGrossChange,
+    grossTooltip,
+}: {
+    title: string;
+    grossValue: number;
+    netValue: number;
+    onGrossChange: (value: string) => void;
+    grossTooltip: string;
+}) {
+    return (
+        <div className="rounded-2xl bg-cardMuted p-4 ring-1 ring-borderSoft">
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                    <h5 className="text-sm font-semibold text-textPrimary">{title}</h5>
+                    <p className="mt-1 text-xs text-textSecondary">
+                        Enter gross. Net is calculated automatically.
+                    </p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                    <FieldLabel label="Gross" tooltip={grossTooltip} />
+                    <TextInput
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={grossValue}
+                        onChange={onGrossChange}
+                        className="bg-card"
+                    />
+                </div>
+
+                <div>
+                    <FieldLabel
+                        label="Net"
+                        tooltip="Calculated from gross using the current tax rate."
+                    />
+                    <ReadonlyValue value={netValue} />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function calculateNetFromGross(gross: number, taxRate: number) {
+    if (taxRate <= -100) {
+        return Number(gross.toFixed(2));
+    }
+
+    return Number((gross / (1 + taxRate / 100)).toFixed(2));
+}
+
 const ALL_SENTINEL = "__placeholder__";
 
 function AppSelect({
@@ -343,17 +400,20 @@ export default function ProductForm({
         return filterTree(categories, categorySearch);
     }, [categories, categorySearch]);
 
-    const wholesaleGross = useMemo(() => {
-        return Number(
-            (form.wholesaleNet + (form.wholesaleNet * form.taxRate) / 100).toFixed(2)
-        );
-    }, [form.wholesaleNet, form.taxRate]);
+    const costNet = useMemo(
+        () => calculateNetFromGross(form.costGross, form.taxRate),
+        [form.costGross, form.taxRate]
+    );
 
-    const retailGross = useMemo(() => {
-        return Number(
-            (form.retailNet + (form.retailNet * form.taxRate) / 100).toFixed(2)
-        );
-    }, [form.retailNet, form.taxRate]);
+    const wholesaleNet = useMemo(
+        () => calculateNetFromGross(form.wholesaleGross, form.taxRate),
+        [form.wholesaleGross, form.taxRate]
+    );
+
+    const retailNet = useMemo(
+        () => calculateNetFromGross(form.retailGross, form.taxRate),
+        [form.retailGross, form.taxRate]
+    );
 
     const handleNumberChange = (
         field: keyof ProductFormData,
@@ -738,14 +798,14 @@ export default function ProductForm({
 
             <SectionCard
                 title="Price Settings"
-                description="These values act as default commercial values for new variants. Variants can override them later if needed."
+                description="Brand owners enter gross values. Net values are calculated from gross and tax rate, then sent to commerce calculations."
             >
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
                         <div>
                             <FieldLabel
                                 label="Tax Rate %"
-                                tooltip="Default product tax rate. New variants will start with this value."
+                                tooltip="Used to calculate net values from gross prices. New variants inherit this unless overridden."
                             />
                             <TextInput
                                 type="number"
@@ -755,66 +815,34 @@ export default function ProductForm({
                                 onChange={(value) => handleNumberChange("taxRate", value)}
                             />
                         </div>
-
-                        <div>
-                            <FieldLabel
-                                label="Cost Price"
-                                tooltip="Default cost price for the product. New variants can inherit and override it."
-                            />
-                            <TextInput
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={form.costPrice}
-                                onChange={(value) => handleNumberChange("costPrice", value)}
-                            />
-                        </div>
-
-                        <div>
-                            <FieldLabel
-                                label="Wholesale Net"
-                                tooltip="Default wholesale net price for new variants."
-                            />
-                            <TextInput
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={form.wholesaleNet}
-                                onChange={(value) => handleNumberChange("wholesaleNet", value)}
-                            />
-                        </div>
-
-                        <div>
-                            <FieldLabel
-                                label="Wholesale Gross"
-                                tooltip="Calculated automatically from wholesale net and tax rate."
-                            />
-                            <ReadonlyValue value={wholesaleGross} />
-                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-                        <div>
-                            <FieldLabel
-                                label="Retail Net"
-                                tooltip="Default retail net price for new variants."
-                            />
-                            <TextInput
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={form.retailNet}
-                                onChange={(value) => handleNumberChange("retailNet", value)}
-                            />
-                        </div>
+                    <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+                        <PricePairCard
+                            title="Cost"
+                            grossValue={form.costGross}
+                            netValue={costNet}
+                            onGrossChange={(value) => handleNumberChange("costGross", value)}
+                            grossTooltip="Gross cost entered by the brand owner."
+                        />
 
-                        <div>
-                            <FieldLabel
-                                label="Retail Gross"
-                                tooltip="Calculated automatically from retail net and tax rate."
-                            />
-                            <ReadonlyValue value={retailGross} />
-                        </div>
+                        <PricePairCard
+                            title="Wholesale"
+                            grossValue={form.wholesaleGross}
+                            netValue={wholesaleNet}
+                            onGrossChange={(value) =>
+                                handleNumberChange("wholesaleGross", value)
+                            }
+                            grossTooltip="Gross wholesale price entered by the brand owner."
+                        />
+
+                        <PricePairCard
+                            title="Retail"
+                            grossValue={form.retailGross}
+                            netValue={retailNet}
+                            onGrossChange={(value) => handleNumberChange("retailGross", value)}
+                            grossTooltip="Gross retail selling price entered by the brand owner."
+                        />
                     </div>
                 </div>
             </SectionCard>
@@ -864,7 +892,12 @@ export default function ProductForm({
                                 type="number"
                                 min="1"
                                 step="1"
-                                value={form.maxOrderQuantity === "" ? "" : form.maxOrderQuantity}
+                                value={
+                                    form.maxOrderQuantity === "" ||
+                                        form.maxOrderQuantity === null
+                                        ? ""
+                                        : form.maxOrderQuantity
+                                }
                                 onChange={(value) =>
                                     onChange("maxOrderQuantity", value === "" ? "" : value)
                                 }
@@ -881,7 +914,12 @@ export default function ProductForm({
                                 type="number"
                                 min="0"
                                 step="1"
-                                value={form.restockTimeDays === "" ? "" : form.restockTimeDays}
+                                value={
+                                    form.restockTimeDays === "" ||
+                                        form.restockTimeDays === null
+                                        ? ""
+                                        : form.restockTimeDays
+                                }
                                 onChange={(value) =>
                                     onChange("restockTimeDays", value === "" ? "" : value)
                                 }

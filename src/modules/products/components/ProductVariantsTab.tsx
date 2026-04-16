@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import {
-    deleteProductVariant,
-    getProductVariants,
-    type ProductVariant,
+    deleteChildProduct,
+    getChildProducts,
+    type ChildProduct,
 } from "@/modules/products/api/productVariantApi";
 import VariantGeneratorModal from "@/modules/products/components/VariantGeneratorModal";
 import { Pencil, Trash2, Plus, WandSparkles, Boxes } from "lucide-react";
@@ -13,18 +13,23 @@ import Button from "@/components/ui/Button";
 interface ProductVariantsTabProps {
     productId: string;
     onAddVariant: () => void;
-    onEditVariant: (variant: ProductVariant) => void;
+    onEditVariant: (variant: ChildProduct) => void;
     defaultValues: {
+        currencyCode?: string;
         taxRate: number;
+        costGross: number;
         costPrice: number;
+        costNet?: number;
+        wholesaleGross: number;
         wholesaleNet: number;
+        retailGross: number;
         retailNet: number;
         stock?: number;
         isActive?: boolean;
     };
 }
 
-function getAttributeSummary(variant: ProductVariant): string {
+function getAttributeSummary(variant: ChildProduct): string {
     const attributeValues = (variant as any).attributeValues as
         | Array<{
             attributeValue: {
@@ -53,20 +58,33 @@ function formatMoney(value?: number) {
     return `₹${Number(value ?? 0).toFixed(2)}`;
 }
 
+function SourceBadge({ inherited }: { inherited: boolean }) {
+    return (
+        <span
+            className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${inherited
+                    ? "bg-cardMuted text-textSecondary ring-1 ring-borderSoft"
+                    : "bg-infoSoft text-primary"
+                }`}
+        >
+            {inherited ? "Inherited" : "Overridden"}
+        </span>
+    );
+}
+
 export default function ProductVariantsTab({
     productId,
     onAddVariant,
     onEditVariant,
     defaultValues,
 }: ProductVariantsTabProps) {
-    const [variants, setVariants] = useState<ProductVariant[]>([]);
+    const [variants, setVariants] = useState<ChildProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [showGenerator, setShowGenerator] = useState(false);
 
     const loadData = async () => {
         try {
             setLoading(true);
-            const variantData = await getProductVariants(productId);
+            const variantData = await getChildProducts(productId);
             setVariants(variantData);
         } catch (error) {
             console.error(error);
@@ -80,9 +98,9 @@ export default function ProductVariantsTab({
         void loadData();
     }, [productId]);
 
-    const handleDelete = async (variant: ProductVariant) => {
+    const handleDelete = async (variant: ChildProduct) => {
         const confirmed = window.confirm(
-            `Are you sure you want to delete variant "${variant.sku}"?`
+            `Are you sure you want to delete "${variant.effectiveName || variant.sku}"?`
         );
 
         if (!confirmed) {
@@ -90,7 +108,7 @@ export default function ProductVariantsTab({
         }
 
         try {
-            await deleteProductVariant(productId, variant.id);
+            await deleteChildProduct(productId, variant.id);
             await loadData();
         } catch (error: any) {
             console.error(error);
@@ -122,7 +140,7 @@ export default function ProductVariantsTab({
                                     Variants ({variants.length})
                                 </h4>
                                 <p className="mt-1 text-sm text-textSecondary">
-                                    Manage all generated and manually created variants for this product.
+                                    Manage the sellable options for this product.
                                 </p>
                             </div>
                         </div>
@@ -215,8 +233,16 @@ export default function ProductVariantsTab({
                                     >
                                         <td className="px-6 py-4">
                                             <div className="font-medium text-textPrimary">
+                                                {variant.effectiveName || variant.sku}
+                                            </div>
+                                            <div className="mt-1 text-xs text-textSecondary">
                                                 {variant.sku}
                                             </div>
+                                            <SourceBadge
+                                                inherited={
+                                                    variant.contentSource?.name === "PRODUCT"
+                                                }
+                                            />
                                         </td>
 
                                         <td className="px-6 py-4 text-sm text-textSecondary">
@@ -224,15 +250,30 @@ export default function ProductVariantsTab({
                                         </td>
 
                                         <td className="px-6 py-4 text-sm font-medium text-textPrimary">
-                                            {formatMoney(variant.retailGross)}
+                                            <div>{formatMoney(variant.retailGross)}</div>
+                                            <SourceBadge
+                                                inherited={
+                                                    variant.commercialSource?.retailGross === "PRODUCT"
+                                                }
+                                            />
                                         </td>
 
                                         <td className="px-6 py-4 text-sm text-textSecondary">
-                                            {formatMoney(variant.wholesaleGross)}
+                                            <div>{formatMoney(variant.wholesaleGross)}</div>
+                                            <SourceBadge
+                                                inherited={
+                                                    variant.commercialSource?.wholesaleGross === "PRODUCT"
+                                                }
+                                            />
                                         </td>
 
                                         <td className="px-6 py-4 text-sm text-textSecondary">
-                                            {variant.stock}
+                                            <div>{variant.stock}</div>
+                                            <SourceBadge
+                                                inherited={
+                                                    variant.commercialSource?.stock === "PRODUCT"
+                                                }
+                                            />
                                         </td>
 
                                         <td className="px-6 py-4">

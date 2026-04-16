@@ -23,10 +23,10 @@ export default function OrderProductSearch({
     const [results, setResults] = useState<OrderSearchProductItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [selectedVariantIds, setSelectedVariantIds] = useState<string[]>([]);
+    const [selectedSellableProductIds, setSelectedSellableProductIds] = useState<string[]>([]);
 
-    const existingVariantIds = useMemo(
-        () => new Set(existingItems.map((item) => item.productVariantId)),
+    const existingSellableProductIds = useMemo(
+        () => new Set(existingItems.map((item) => item.sellableProductId)),
         [existingItems]
     );
 
@@ -36,7 +36,7 @@ export default function OrderProductSearch({
         const runSearch = async () => {
             if (search.trim().length < 2) {
                 setResults([]);
-                setSelectedVariantIds([]);
+                setSelectedSellableProductIds([]);
                 setError(null);
                 return;
             }
@@ -53,10 +53,10 @@ export default function OrderProductSearch({
                     // Auto-check already added items and clear stale selections.
                     const validSelectableIds = new Set(data.map((item) => item.id));
 
-                    setSelectedVariantIds((prev) => {
+                    setSelectedSellableProductIds((prev) => {
                         const persisted = prev.filter((id) => validSelectableIds.has(id));
                         const alreadyAddedIds = data
-                            .filter((item) => existingVariantIds.has(item.id))
+                            .filter((item) => existingSellableProductIds.has(item.id))
                             .map((item) => item.id);
 
                         return Array.from(new Set([...persisted, ...alreadyAddedIds]));
@@ -83,13 +83,13 @@ export default function OrderProductSearch({
             controller.abort();
             clearTimeout(timeout);
         };
-    }, [search, existingVariantIds]);
+    }, [search, existingSellableProductIds]);
 
-    const toggleSelection = (variantId: string) => {
-        setSelectedVariantIds((prev) =>
-            prev.includes(variantId)
-                ? prev.filter((id) => id !== variantId)
-                : [...prev, variantId]
+    const toggleSelection = (sellableProductId: string) => {
+        setSelectedSellableProductIds((prev) =>
+            prev.includes(sellableProductId)
+                ? prev.filter((id) => id !== sellableProductId)
+                : [...prev, sellableProductId]
         );
     };
 
@@ -104,7 +104,7 @@ export default function OrderProductSearch({
 
         return {
             brandOwnerId: item.brandOwnerId,
-            productVariantId: item.id,
+            sellableProductId: item.id,
             productId: item.productId,
             productName: item.productName,
             productCode: item.productCode,
@@ -122,13 +122,13 @@ export default function OrderProductSearch({
     };
 
     const handleAddSingle = (item: OrderSearchProductItem) => {
-        if (existingVariantIds.has(item.id)) {
+        if (existingSellableProductIds.has(item.id)) {
             return;
         }
 
         onAddItem(buildCartItem(item));
 
-        setSelectedVariantIds((prev) =>
+        setSelectedSellableProductIds((prev) =>
             Array.from(new Set([...prev, item.id]))
         );
     };
@@ -136,8 +136,8 @@ export default function OrderProductSearch({
     const handleAddSelected = () => {
         const itemsToAdd = results.filter(
             (item) =>
-                selectedVariantIds.includes(item.id) &&
-                !existingVariantIds.has(item.id)
+                selectedSellableProductIds.includes(item.id) &&
+                !existingSellableProductIds.has(item.id)
         );
 
         itemsToAdd.forEach((item) => {
@@ -147,7 +147,7 @@ export default function OrderProductSearch({
         if (itemsToAdd.length > 0) {
             const addedIds = itemsToAdd.map((item) => item.id);
 
-            setSelectedVariantIds((prev) =>
+            setSelectedSellableProductIds((prev) =>
                 Array.from(new Set([...prev, ...addedIds]))
             );
         }
@@ -155,8 +155,8 @@ export default function OrderProductSearch({
 
     const selectableCount = results.filter(
         (item) =>
-            selectedVariantIds.includes(item.id) &&
-            !existingVariantIds.has(item.id)
+            selectedSellableProductIds.includes(item.id) &&
+            !existingSellableProductIds.has(item.id)
     ).length;
 
     const canAddSelected = selectableCount > 0;
@@ -202,8 +202,8 @@ export default function OrderProductSearch({
             {results.length > 0 ? (
                 <div className="mt-3 max-h-80 space-y-2 overflow-y-auto rounded-xl border border-gray-200 p-2">
                     {results.map((item) => {
-                        const alreadyAdded = existingVariantIds.has(item.id);
-                        const isChecked = selectedVariantIds.includes(item.id);
+                        const alreadyAdded = existingSellableProductIds.has(item.id);
+                        const isChecked = selectedSellableProductIds.includes(item.id);
 
                         return (
                             <div
