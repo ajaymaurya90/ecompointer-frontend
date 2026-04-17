@@ -1,19 +1,20 @@
 
 import { create } from "zustand";
+import type { UserRole } from "@/modules/auth/types/auth";
 
-interface User {
+export interface AuthUser {
     id: string;
     email: string;
-    role: "BrandOwner" | "ShopOwner";
+    role: UserRole;
 }
 
 interface AuthState {
     accessToken: string | null;
-    user: User | null;
+    user: AuthUser | null;
     isInitialized: boolean;
 
     setAccessToken: (token: string | null) => void;
-    setUser: (user: User | null) => void;
+    setUser: (user: AuthUser | null) => void;
     setInitialized: (value: boolean) => void;
     clearAuth: () => void;
 }

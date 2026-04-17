@@ -20,11 +20,11 @@ import {
     MapPin,
     Globe,
     ShoppingCart,
-    Receipt,
     ClipboardList,
     Link2,
     FolderOpen,
     Image,
+    RadioTower,
 } from "lucide-react";
 
 type MenuKey =
@@ -82,6 +82,10 @@ const Sidebar = () => {
     const [openMenu, setOpenMenu] = useState<MenuKey>(null);
 
     const isActive = (path: string) => pathname === path;
+    const isMenuItemActive = (path: string) =>
+        pathname === path ||
+        (path === "/dashboard/settings/sales-channels" &&
+            pathname.startsWith(`${path}/`));
 
     const isProductsSectionActive = pathname.startsWith("/dashboard/products");
     const isContentSectionActive = pathname.startsWith("/dashboard/media");
@@ -297,11 +301,6 @@ const Sidebar = () => {
                                         label: "Create Order",
                                         icon: <ShoppingCart size={16} />,
                                     },
-                                    {
-                                        href: "/dashboard/orders/payments",
-                                        label: "Payments",
-                                        icon: <Receipt size={16} />,
-                                    },
                                 ]}
                             />
                         </div>
@@ -322,7 +321,7 @@ const Sidebar = () => {
                             <FlyoutMenu
                                 open={openMenu === "settings"}
                                 collapsed={collapsed}
-                                isActive={isActive}
+                                isActive={isMenuItemActive}
                                 items={[
                                     {
                                         href: "/dashboard/settings/profile",
@@ -343,6 +342,11 @@ const Sidebar = () => {
                                         href: "/dashboard/settings/service-area",
                                         label: "Service Area",
                                         icon: <Globe size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/settings/sales-channels",
+                                        label: "Sales Channels",
+                                        icon: <RadioTower size={16} />,
                                     },
                                     {
                                         href: "/dashboard/settings/storefront",

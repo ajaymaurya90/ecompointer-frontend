@@ -3,6 +3,7 @@ import type {
     BrandOwnerLocation,
     CountryOption,
     DistrictOption,
+    PincodeOption,
     StateOption,
     UpdateBrandOwnerLocationPayload,
     BrandOwnerServiceArea,
@@ -16,6 +17,14 @@ import type {
     BrandOwnerStorefrontDomain,
     CreateBrandOwnerStorefrontDomainPayload,
     UpdateBrandOwnerStorefrontDomainPayload,
+    BrandOwnerSalesChannel,
+    BrandOwnerSalesChannelServiceArea,
+    CreateBrandOwnerSalesChannelPayload,
+    CreateBrandOwnerSalesChannelServiceAreaPayload,
+    SalesChannelTypeMaster,
+    SalesChannelType,
+    ServiceabilityCheckResult,
+    UpdateBrandOwnerSalesChannelPayload,
 } from "@/modules/brand-owners/types/brandOwner";
 import type {
     BrandOwnerLanguage,
@@ -70,6 +79,19 @@ export async function getActiveDistrictsByState(
     return response.data?.data ?? response.data ?? [];
 }
 
+export async function getActivePincodesByDistrict(
+    districtId: string
+): Promise<PincodeOption[]> {
+    const response = await api.get("/master-data/pincodes", {
+        params: {
+            districtId,
+            isActive: true,
+        },
+    });
+
+    return response.data?.data ?? response.data ?? [];
+}
+
 export async function getMyBrandOwnerLanguage(): Promise<BrandOwnerLanguage> {
     const response = await api.get("/brand-owners/me/language");
     return response.data?.data ?? response.data;
@@ -115,6 +137,100 @@ export async function updateMyBrandOwnerServiceAreaDistrict(
         `/brand-owners/me/service-area/districts/${districtId}`,
         data
     );
+    return response.data?.data ?? response.data;
+}
+
+export async function getMyBrandOwnerSalesChannels(): Promise<BrandOwnerSalesChannel[]> {
+    const response = await api.get("/brand-owner-sales-channels/me");
+    return response.data?.data ?? response.data ?? [];
+}
+
+export async function getActiveSalesChannelTypes(): Promise<SalesChannelTypeMaster[]> {
+    const response = await api.get("/master-data/sales-channel-types/active");
+    return response.data?.data ?? response.data ?? [];
+}
+
+export async function createMyBrandOwnerSalesChannel(
+    data: CreateBrandOwnerSalesChannelPayload
+): Promise<BrandOwnerSalesChannel> {
+    const response = await api.post("/brand-owner-sales-channels/me", data);
+    return response.data?.data ?? response.data;
+}
+
+export async function getMyBrandOwnerSalesChannelById(
+    channelId: string
+): Promise<BrandOwnerSalesChannel> {
+    const response = await api.get(
+        `/brand-owner-sales-channels/me/by-id/${channelId}`
+    );
+    return response.data?.data ?? response.data;
+}
+
+export async function updateMyBrandOwnerSalesChannel(
+    channelType: SalesChannelType,
+    data: UpdateBrandOwnerSalesChannelPayload
+): Promise<BrandOwnerSalesChannel> {
+    const response = await api.patch(
+        `/brand-owner-sales-channels/me/${channelType}`,
+        data
+    );
+    return response.data?.data ?? response.data;
+}
+
+export async function updateMyBrandOwnerSalesChannelById(
+    channelId: string,
+    data: UpdateBrandOwnerSalesChannelPayload
+): Promise<BrandOwnerSalesChannel> {
+    const response = await api.patch(
+        `/brand-owner-sales-channels/me/by-id/${channelId}`,
+        data
+    );
+    return response.data?.data ?? response.data;
+}
+
+export async function getMyBrandOwnerSalesChannelServiceAreas(
+    channelType: SalesChannelType
+): Promise<BrandOwnerSalesChannelServiceArea[]> {
+    const response = await api.get(
+        `/brand-owner-sales-channels/me/${channelType}/service-areas`
+    );
+    return response.data?.data ?? response.data ?? [];
+}
+
+export async function createMyBrandOwnerSalesChannelServiceArea(
+    channelType: SalesChannelType,
+    data: CreateBrandOwnerSalesChannelServiceAreaPayload
+): Promise<BrandOwnerSalesChannelServiceArea> {
+    const response = await api.post(
+        `/brand-owner-sales-channels/me/${channelType}/service-areas`,
+        data
+    );
+    return response.data?.data ?? response.data;
+}
+
+export async function deleteMyBrandOwnerSalesChannelServiceArea(
+    channelType: SalesChannelType,
+    serviceAreaId: string
+): Promise<{ message: string }> {
+    const response = await api.delete(
+        `/brand-owner-sales-channels/me/${channelType}/service-areas/${serviceAreaId}`
+    );
+    return response.data?.data ?? response.data;
+}
+
+export async function checkStorefrontServiceability(params: {
+    pincode: string;
+    channelType: SalesChannelType;
+    brandOwnerId?: string;
+}): Promise<ServiceabilityCheckResult> {
+    const response = await api.get("/storefront/serviceability/check", {
+        params: {
+            pincode: params.pincode,
+            channelType: params.channelType,
+            brandOwnerId: params.brandOwnerId || undefined,
+        },
+    });
+
     return response.data?.data ?? response.data;
 }
 

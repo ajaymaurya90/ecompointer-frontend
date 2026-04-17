@@ -3,10 +3,23 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/modules/auth/store/authStore";
+import type { UserRole } from "@/modules/auth/types/auth";
 
 interface Props {
     children: React.ReactNode;
-    allowedRoles?: ("BRAND_OWNER" | "SHOP_OWNER" | "SUPER_ADMIN")[];
+    allowedRoles?: UserRole[];
+}
+
+function normalizeRole(role?: string | null): UserRole | null {
+    if (!role) return null;
+    const normalized = role.toUpperCase() as UserRole;
+    return ["BRAND_OWNER", "SHOP_OWNER", "SUPER_ADMIN"].includes(normalized)
+        ? normalized
+        : null;
+}
+
+function getDashboardForRole(role: UserRole | null) {
+    return role === "SUPER_ADMIN" ? "/admin" : "/dashboard";
 }
 
 export default function ProtectedRoute({
@@ -24,8 +37,15 @@ export default function ProtectedRoute({
             return;
         }
 
-        if (allowedRoles && !allowedRoles.includes(user.role.toUpperCase() as "BRAND_OWNER" | "SHOP_OWNER" | "SUPER_ADMIN")) {
-            router.replace("/unauthorized");
+        const role = normalizeRole(user.role);
+
+        if (!role) {
+            router.replace("/login");
+            return;
+        }
+
+        if (allowedRoles && !allowedRoles.includes(role)) {
+            router.replace(getDashboardForRole(role));
         }
     }, [accessToken, user, isInitialized, allowedRoles, router]);
 
@@ -40,7 +60,9 @@ export default function ProtectedRoute({
     }
 
     // Role restriction
-    if (allowedRoles && !allowedRoles.includes(user.role.toUpperCase() as "BRAND_OWNER" | "SHOP_OWNER" | "SUPER_ADMIN")) {
+    const role = normalizeRole(user.role);
+
+    if (!role || (allowedRoles && !allowedRoles.includes(role))) {
         return null;
     }
 

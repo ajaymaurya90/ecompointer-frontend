@@ -38,7 +38,11 @@ export default function LoginForm() {
             setAccessToken(res.data.accessToken);
             setUser(res.data.user);
 
-            router.replace("/dashboard");
+            if (res.data.user.role === "SUPER_ADMIN") {
+                router.replace("/admin");
+            } else {
+                router.replace("/dashboard");
+            }
         } catch (error) {
             setServerError("Invalid email or password");
         }

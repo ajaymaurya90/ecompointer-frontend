@@ -18,6 +18,7 @@ import {
     MapPin,
     Globe,
     Map,
+    RadioTower,
     Store,
 } from "lucide-react";
 
@@ -47,6 +48,12 @@ const items = [
         icon: Map,
     },
     {
+        href: "/dashboard/settings/sales-channels",
+        title: "Sales Channels",
+        description: "Manage website channel, domains, and delivery settings",
+        icon: RadioTower,
+    },
+    {
         href: "/dashboard/settings/storefront",
         title: "Storefront",
         description: "Manage storefront branding and customer-facing settings",
@@ -69,7 +76,10 @@ export default function SettingsNav() {
             <div className="space-y-3">
                 {items.map((item) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.href;
+                    const isActive =
+                        pathname === item.href ||
+                        (item.href === "/dashboard/settings/sales-channels" &&
+                            pathname.startsWith(`${item.href}/`));
 
                     return (
                         <Link

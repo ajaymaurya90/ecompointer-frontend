@@ -35,6 +35,92 @@ export type DistrictOption = {
     };
 };
 
+export type PincodeOption = {
+    id: string;
+    code: string;
+    districtId: string;
+    isActive: boolean;
+    district?: DistrictOption | null;
+};
+
+export type SalesChannelType =
+    | "DIRECT_WEBSITE"
+    | "SHOP_ORDER"
+    | "FRANCHISE_SHOP"
+    | "MARKETPLACE"
+    | "SOCIAL_MEDIA"
+    | "MANUAL";
+
+export type ServiceAreaLevel = "COUNTRY" | "STATE" | "DISTRICT" | "PINCODE";
+
+export type SalesChannelTypeMaster = {
+    id: string;
+    code: SalesChannelType;
+    label: string;
+    description?: string | null;
+    isActive: boolean;
+    sortOrder: number;
+    createdAt?: string;
+    updatedAt?: string;
+};
+
+export type BrandOwnerSalesChannel = {
+    id: string;
+    brandOwnerId: string;
+    channelType: SalesChannelType;
+    salesChannelTypeId?: string | null;
+    salesChannelType?: SalesChannelTypeMaster | null;
+    internalName?: string | null;
+    displayName?: string | null;
+    isPrimary?: boolean;
+    isActive: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+};
+
+export type UpdateBrandOwnerSalesChannelPayload = {
+    displayName?: string | null;
+    isActive?: boolean;
+};
+
+export type CreateBrandOwnerSalesChannelPayload = {
+    salesChannelTypeId: string;
+    channelType?: SalesChannelType;
+    displayName?: string | null;
+    isActive?: boolean;
+};
+
+export type BrandOwnerSalesChannelServiceArea = {
+    id: string;
+    brandOwnerSalesChannelId: string;
+    level: ServiceAreaLevel;
+    countryId?: string | null;
+    stateId?: string | null;
+    districtId?: string | null;
+    pincodeId?: string | null;
+    isActive: boolean;
+    country?: CountryOption | null;
+    state?: StateOption | null;
+    district?: DistrictOption | null;
+    pincode?: PincodeOption | null;
+    createdAt?: string;
+    updatedAt?: string;
+};
+
+export type CreateBrandOwnerSalesChannelServiceAreaPayload = {
+    level: ServiceAreaLevel;
+    countryId?: string;
+    stateId?: string;
+    districtId?: string;
+    pincodeId?: string;
+    isActive?: boolean;
+};
+
+export type ServiceabilityCheckResult = {
+    serviceable: boolean;
+    matchedLevel: ServiceAreaLevel | null;
+};
+
 export type BrandOwnerUserInfo = {
     id: string;
     email: string;
@@ -174,6 +260,7 @@ export interface BrandOwnerStorefrontSettings {
     isStorefrontEnabled: boolean;
     isGuestCheckoutEnabled: boolean;
     isCustomerRegistrationEnabled: boolean;
+    currencyCode?: string | null;
     activeStorefrontThemeCode: string;
     isStorefrontThemeActive: boolean;
 }
