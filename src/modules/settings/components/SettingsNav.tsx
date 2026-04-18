@@ -17,6 +17,7 @@ import {
     User,
     MapPin,
     Globe,
+    Mail,
     Map,
     RadioTower,
     Store,
@@ -54,6 +55,12 @@ const items = [
         icon: RadioTower,
     },
     {
+        href: "/dashboard/settings/mail-templates",
+        title: "Mail Templates",
+        description: "Customize transactional email templates",
+        icon: Mail,
+    },
+    {
         href: "/dashboard/settings/storefront",
         title: "Storefront",
         description: "Manage storefront branding and customer-facing settings",
@@ -79,6 +86,8 @@ export default function SettingsNav() {
                     const isActive =
                         pathname === item.href ||
                         (item.href === "/dashboard/settings/sales-channels" &&
+                            pathname.startsWith(`${item.href}/`)) ||
+                        (item.href === "/dashboard/settings/mail-templates" &&
                             pathname.startsWith(`${item.href}/`));
 
                     return (

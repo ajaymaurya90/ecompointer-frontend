@@ -11,8 +11,9 @@ type SettingsLayoutShellProps = {
 export default function SettingsLayoutShell({ children }: SettingsLayoutShellProps) {
     const pathname = usePathname();
     const isSalesChannelFlow = pathname.startsWith("/dashboard/settings/sales-channels");
+    const isMailTemplateFlow = pathname.startsWith("/dashboard/settings/mail-templates");
 
-    if (isSalesChannelFlow) {
+    if (isSalesChannelFlow || isMailTemplateFlow) {
         return <div className="space-y-6">{children}</div>;
     }
 

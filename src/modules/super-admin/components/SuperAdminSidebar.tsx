@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Building2,
+    ClipboardList,
     Database,
     LayoutDashboard,
+    Mail,
     Map,
     MapPin,
     RadioTower,
@@ -63,6 +65,16 @@ const navItems = [
                 icon: <RadioTower size={16} />,
             },
         ],
+    },
+    {
+        href: "/admin/mail-templates",
+        label: "Mail Templates",
+        icon: <Mail size={18} />,
+    },
+    {
+        href: "/admin/activity-logs",
+        label: "Activity Logs",
+        icon: <ClipboardList size={18} />,
     },
     {
         href: "/admin/users",

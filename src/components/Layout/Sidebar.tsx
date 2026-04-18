@@ -25,6 +25,7 @@ import {
     FolderOpen,
     Image,
     RadioTower,
+    Mail,
 } from "lucide-react";
 
 type MenuKey =
@@ -85,6 +86,8 @@ const Sidebar = () => {
     const isMenuItemActive = (path: string) =>
         pathname === path ||
         (path === "/dashboard/settings/sales-channels" &&
+            pathname.startsWith(`${path}/`)) ||
+        (path === "/dashboard/settings/mail-templates" &&
             pathname.startsWith(`${path}/`));
 
     const isProductsSectionActive = pathname.startsWith("/dashboard/products");
@@ -95,6 +98,7 @@ const Sidebar = () => {
     const isShopOwnersSectionActive = pathname.startsWith("/dashboard/shop-owners");
     const isOrdersSectionActive = pathname.startsWith("/dashboard/orders");
     const isSettingsSectionActive = pathname.startsWith("/dashboard/settings");
+    const isActivityLogsActive = pathname.startsWith("/dashboard/activity-logs");
 
     return (
         <aside
@@ -128,6 +132,15 @@ const Sidebar = () => {
                         >
                             <LayoutDashboard size={18} className="shrink-0" />
                             {!collapsed && <span>Dashboard</span>}
+                        </Link>
+
+                        <Link
+                            href="/dashboard/activity-logs"
+                            className={`sidebar-nav-item flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium ${isActivityLogsActive ? "active" : "app-text-sidebar-muted"
+                                }`}
+                        >
+                            <ClipboardList size={18} className="shrink-0" />
+                            {!collapsed && <span>Activity Logs</span>}
                         </Link>
 
                         <div
@@ -347,6 +360,11 @@ const Sidebar = () => {
                                         href: "/dashboard/settings/sales-channels",
                                         label: "Sales Channels",
                                         icon: <RadioTower size={16} />,
+                                    },
+                                    {
+                                        href: "/dashboard/settings/mail-templates",
+                                        label: "Mail Templates",
+                                        icon: <Mail size={16} />,
                                     },
                                     {
                                         href: "/dashboard/settings/storefront",
