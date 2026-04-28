@@ -3,6 +3,9 @@ export type MasterStatusFilter = "all" | "active" | "inactive";
 export type MasterQueryParams = {
     search?: string;
     isActive?: boolean;
+    code?: string;
+    page?: number;
+    limit?: number;
     countryId?: string;
     stateId?: string;
     districtId?: string;
@@ -83,6 +86,38 @@ export type SalesChannelTypeMaster = {
     updatedAt?: string;
 };
 
+export type PaymentGatewayProvider =
+    | "RAZORPAY"
+    | "MOCK"
+    | "STRIPE"
+    | "CASHFREE"
+    | "PAYPAL"
+    | "OTHER";
+
+export type PaymentGatewayMaster = {
+    id: string;
+    code: PaymentGatewayProvider;
+    name: string;
+    displayName: string;
+    description?: string | null;
+    isActive: boolean;
+    supportsTestMode: boolean;
+    supportsLiveMode: boolean;
+    sortOrder: number;
+    createdAt?: string;
+    updatedAt?: string;
+};
+
+export type PaymentGatewayListResponse = {
+    data: PaymentGatewayMaster[];
+    meta: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+};
+
 export type SalutationPayload = {
     id: string;
     label: string;
@@ -122,4 +157,15 @@ export type SalesChannelTypePayload = {
     description?: string | null;
     sortOrder?: number;
     isActive?: boolean;
+};
+
+export type PaymentGatewayPayload = {
+    code: PaymentGatewayProvider;
+    name: string;
+    displayName: string;
+    description?: string | null;
+    isActive?: boolean;
+    supportsTestMode?: boolean;
+    supportsLiveMode?: boolean;
+    sortOrder?: number;
 };

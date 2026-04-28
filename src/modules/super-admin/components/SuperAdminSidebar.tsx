@@ -8,12 +8,8 @@ import {
     Database,
     LayoutDashboard,
     Mail,
-    Map,
-    MapPin,
-    RadioTower,
     Settings,
     Shield,
-    Tags,
     Users,
 } from "lucide-react";
 import { logout } from "@/modules/auth/lib/logout";
@@ -33,38 +29,6 @@ const navItems = [
         href: "/admin/master-data",
         label: "Master Data",
         icon: <Database size={18} />,
-        children: [
-            {
-                href: "/admin/master-data/salutations",
-                label: "Salutations",
-                icon: <Tags size={16} />,
-            },
-            {
-                href: "/admin/master-data/countries",
-                label: "Countries",
-                icon: <Map size={16} />,
-            },
-            {
-                href: "/admin/master-data/states",
-                label: "States",
-                icon: <MapPin size={16} />,
-            },
-            {
-                href: "/admin/master-data/districts",
-                label: "Districts",
-                icon: <MapPin size={16} />,
-            },
-            {
-                href: "/admin/master-data/pincodes",
-                label: "Pincodes",
-                icon: <MapPin size={16} />,
-            },
-            {
-                href: "/admin/master-data/sales-channel-types",
-                label: "Sales Channel Types",
-                icon: <RadioTower size={16} />,
-            },
-        ],
     },
     {
         href: "/admin/mail-templates",
@@ -127,24 +91,6 @@ export default function SuperAdminSidebar() {
                             <span className="shrink-0">{item.icon}</span>
                             <span>{item.label}</span>
                         </Link>
-                        {item.children && isActive(item.href) ? (
-                            <div className="mt-2 space-y-1 pl-4">
-                                {item.children.map((child) => (
-                                    <Link
-                                        key={child.href}
-                                        href={child.href}
-                                        className={`sidebar-nav-item flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-medium ${
-                                            isActive(child.href)
-                                                ? "active"
-                                                : "app-text-sidebar-muted"
-                                        }`}
-                                    >
-                                        <span className="shrink-0">{child.icon}</span>
-                                        <span>{child.label}</span>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : null}
                     </div>
                 ))}
             </nav>

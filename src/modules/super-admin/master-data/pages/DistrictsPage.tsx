@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
     createDistrict,
     getCountries,
@@ -20,11 +22,16 @@ import type { Country, District, State } from "@/modules/super-admin/master-data
 const emptyForm = { countryId: "", stateId: "", name: "", isActive: true };
 
 export default function DistrictsPage() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [items, setItems] = useState<District[]>([]);
     const [countries, setCountries] = useState<Country[]>([]);
     const [states, setStates] = useState<State[]>([]);
-    const [countryFilter, setCountryFilter] = useState("");
-    const [stateFilter, setStateFilter] = useState("");
+    const [countryFilter, setCountryFilter] = useState(
+        searchParams.get("countryId") ?? "",
+    );
+    const [stateFilter, setStateFilter] = useState(searchParams.get("stateId") ?? "");
     const [search, setSearch] = useState("");
     const [form, setForm] = useState(emptyForm);
     const [editing, setEditing] = useState<District | null>(null);
@@ -37,6 +44,10 @@ export default function DistrictsPage() {
     const modalStates = states.filter((state) => !form.countryId || state.countryId === form.countryId);
     const stateOptions = visibleStates.map((item) => ({ id: item.id, label: item.name }));
     const modalStateOptions = modalStates.map((item) => ({ id: item.id, label: item.name }));
+    const selectedState = states.find((item) => item.id === stateFilter) ?? null;
+    const selectedCountry =
+        countries.find((item) => item.id === (selectedState?.countryId || countryFilter)) ??
+        null;
 
     const filtered = useMemo(() => {
         const value = search.trim().toLowerCase();
@@ -74,6 +85,55 @@ export default function DistrictsPage() {
     useEffect(() => {
         load();
     }, []);
+
+    useEffect(() => {
+        const nextStateId = searchParams.get("stateId") ?? "";
+        const nextCountryId = searchParams.get("countryId") ?? "";
+
+        if (nextStateId !== stateFilter) {
+            setStateFilter(nextStateId);
+        }
+
+        if (nextCountryId !== countryFilter) {
+            setCountryFilter(nextCountryId);
+        }
+    }, [countryFilter, searchParams, stateFilter]);
+
+    useEffect(() => {
+        if (!stateFilter) {
+            return;
+        }
+
+        const state = states.find((item) => item.id === stateFilter);
+        if (state && state.countryId !== countryFilter) {
+            setCountryFilter(state.countryId);
+        }
+    }, [countryFilter, stateFilter, states]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (countryFilter) {
+            params.set("countryId", countryFilter);
+        } else {
+            params.delete("countryId");
+        }
+
+        if (stateFilter) {
+            params.set("stateId", stateFilter);
+        } else {
+            params.delete("stateId");
+        }
+
+        const nextQuery = params.toString();
+        const currentQuery = searchParams.toString();
+
+        if (nextQuery !== currentQuery) {
+            router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+                scroll: false,
+            });
+        }
+    }, [countryFilter, pathname, router, searchParams, stateFilter]);
 
     function openCreate() {
         setEditing(null);
@@ -139,6 +199,21 @@ export default function DistrictsPage() {
                 actionLabel="New District"
                 onAction={openCreate}
             />
+            {selectedState ? (
+                <HierarchyContext
+                    label="Showing districts for"
+                    value={selectedState.name}
+                    helper={selectedCountry ? `Country: ${selectedCountry.name}` : undefined}
+                    backHref={
+                        selectedCountry
+                            ? `/admin/master-data/states?countryId=${selectedCountry.id}`
+                            : "/admin/master-data/states"
+                    }
+                    backLabel="Back to States"
+                    clearHref="/admin/master-data/districts"
+                    clearLabel="View all districts"
+                />
+            ) : null}
             <section className="grid grid-cols-1 gap-4 rounded-2xl border border-borderSoft bg-white p-5 shadow-sm lg:grid-cols-3">
                 <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search districts" className="rounded-2xl border border-borderSoft px-4 py-3 text-sm text-textPrimary outline-none transition focus:border-sidebar" />
                 <select value={countryFilter} onChange={(event) => { setCountryFilter(event.target.value); setStateFilter(""); }} className="rounded-2xl border border-borderSoft bg-white px-4 py-3 text-sm text-textPrimary outline-none transition focus:border-sidebar">
@@ -166,7 +241,7 @@ export default function DistrictsPage() {
                             <tbody>
                                 {filtered.map((item) => (
                                     <tr key={item.id} className="border-b border-borderSoft last:border-b-0">
-                                        <td className="px-5 py-4 font-semibold text-textPrimary">{item.name}</td>
+                                        <td className="px-5 py-4"><Link href={`/admin/master-data/pincodes?countryId=${item.state?.country?.id || item.state?.countryId || countryFilter}&stateId=${item.stateId}&districtId=${item.id}`} className="font-semibold text-textPrimary transition hover:text-sidebar">{item.name}</Link></td>
                                         <td className="px-5 py-4 text-textPrimary">{item.state?.name || "-"}</td>
                                         <td className="px-5 py-4 text-textPrimary">{item.state?.country?.name || "-"}</td>
                                         <td className="px-5 py-4"><StatusBadge isActive={item.isActive} /></td>
@@ -197,3 +272,4 @@ function ErrorBox({ error, onRetry }: { error: string; onRetry: () => void }) { 
 function Actions({ onEdit, onToggle, isActive }: { onEdit: () => void; onToggle: () => void; isActive: boolean }) { return <div className="flex gap-2"><button type="button" onClick={onEdit} className="rounded-2xl border border-borderSoft px-3 py-2 text-xs font-semibold text-textPrimary hover:bg-cardMuted">Edit</button><button type="button" onClick={onToggle} className="rounded-2xl border border-borderSoft px-3 py-2 text-xs font-semibold text-textSecondary hover:bg-cardMuted">{isActive ? "Deactivate" : "Activate"}</button></div>; }
 function ActiveCheckbox({ value, onChange }: { value: boolean; onChange: (value: boolean) => void }) { return <label className="flex items-center gap-3 text-sm font-medium text-textPrimary"><input type="checkbox" checked={value} onChange={(event) => onChange(event.target.checked)} />Active</label>; }
 function SubmitButton({ label }: { label: string }) { return <button type="submit" className="rounded-2xl bg-sidebar px-5 py-3 text-sm font-medium text-white shadow-sm">{label}</button>; }
+function HierarchyContext({ label, value, helper, backHref, backLabel, clearHref, clearLabel }: { label: string; value: string; helper?: string; backHref: string; backLabel: string; clearHref: string; clearLabel: string }) { return <section className="flex flex-col gap-3 rounded-2xl border border-borderSoft bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between"><div><div className="text-sm text-textSecondary">{label}</div><div className="mt-1 text-lg font-semibold text-textPrimary">{value}</div>{helper ? <div className="mt-1 text-sm text-textSecondary">{helper}</div> : null}</div><div className="flex flex-wrap gap-2"><Link href={backHref} className="rounded-2xl border border-borderSoft px-4 py-2 text-sm font-medium text-textPrimary transition hover:bg-cardMuted">{backLabel}</Link><Link href={clearHref} className="rounded-2xl border border-borderSoft px-4 py-2 text-sm font-medium text-textSecondary transition hover:bg-cardMuted">{clearLabel}</Link></div></section>; }

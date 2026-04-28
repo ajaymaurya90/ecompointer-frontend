@@ -5,6 +5,9 @@ import type {
     District,
     DistrictPayload,
     MasterQueryParams,
+    PaymentGatewayListResponse,
+    PaymentGatewayMaster,
+    PaymentGatewayPayload,
     Pincode,
     PincodePayload,
     Salutation,
@@ -20,6 +23,9 @@ function buildParams(params: MasterQueryParams = {}) {
         search: params.search || undefined,
         isActive:
             params.isActive === undefined ? undefined : String(params.isActive),
+        code: params.code || undefined,
+        page: params.page || undefined,
+        limit: params.limit || undefined,
         countryId: params.countryId || undefined,
         stateId: params.stateId || undefined,
         districtId: params.districtId || undefined,
@@ -172,6 +178,55 @@ export async function updateSalesChannelType(
     const response = await api.patch<SalesChannelTypeMaster>(
         `/master-data/sales-channel-types/${id}`,
         data,
+    );
+    return response.data;
+}
+
+export async function getPaymentGateways(
+    params?: MasterQueryParams,
+): Promise<PaymentGatewayListResponse> {
+    const response = await api.get<PaymentGatewayListResponse>(
+        "/master-data/payment-gateways",
+        { params: buildParams(params) },
+    );
+    return response.data;
+}
+
+export async function getPaymentGatewayById(
+    id: string,
+): Promise<PaymentGatewayMaster> {
+    const response = await api.get<PaymentGatewayMaster>(
+        `/master-data/payment-gateways/${id}`,
+    );
+    return response.data;
+}
+
+export async function createPaymentGateway(
+    data: PaymentGatewayPayload,
+): Promise<PaymentGatewayMaster> {
+    const response = await api.post<PaymentGatewayMaster>(
+        "/master-data/payment-gateways",
+        data,
+    );
+    return response.data;
+}
+
+export async function updatePaymentGateway(
+    id: string,
+    data: Partial<PaymentGatewayPayload>,
+): Promise<PaymentGatewayMaster> {
+    const response = await api.patch<PaymentGatewayMaster>(
+        `/master-data/payment-gateways/${id}`,
+        data,
+    );
+    return response.data;
+}
+
+export async function deletePaymentGateway(
+    id: string,
+): Promise<PaymentGatewayMaster> {
+    const response = await api.delete<PaymentGatewayMaster>(
+        `/master-data/payment-gateways/${id}`,
     );
     return response.data;
 }

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AxiosError } from "axios";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
     createPincode,
     getCountries,
@@ -26,13 +28,20 @@ import type {
 const pageSize = 10;
 
 export default function PincodesPage() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [items, setItems] = useState<Pincode[]>([]);
     const [countries, setCountries] = useState<Country[]>([]);
     const [states, setStates] = useState<State[]>([]);
     const [districts, setDistricts] = useState<District[]>([]);
-    const [countryFilter, setCountryFilter] = useState("");
-    const [stateFilter, setStateFilter] = useState("");
-    const [districtFilter, setDistrictFilter] = useState("");
+    const [countryFilter, setCountryFilter] = useState(
+        searchParams.get("countryId") ?? "",
+    );
+    const [stateFilter, setStateFilter] = useState(searchParams.get("stateId") ?? "");
+    const [districtFilter, setDistrictFilter] = useState(
+        searchParams.get("districtId") ?? "",
+    );
     const [statusFilter, setStatusFilter] = useState<MasterStatusFilter>("all");
     const [search, setSearch] = useState("");
     const [editing, setEditing] = useState<Pincode | null>(null);
@@ -62,11 +71,18 @@ export default function PincodesPage() {
                 .map((district) => ({ id: district.id, label: district.name })),
         [districts, stateFilter],
     );
+    const selectedDistrict = districts.find((item) => item.id === districtFilter) ?? null;
+    const selectedState =
+        states.find((item) => item.id === (selectedDistrict?.stateId || stateFilter)) ?? null;
+    const selectedCountry =
+        countries.find(
+            (item) => item.id === (selectedState?.countryId || countryFilter),
+        ) ?? null;
 
     const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
     const paginatedItems = items.slice((page - 1) * pageSize, page * pageSize);
 
-    async function loadMasters() {
+    const loadMasters = useCallback(async () => {
         const [countryRows, stateRows, districtRows] = await Promise.all([
             getCountries(),
             getStates(),
@@ -75,9 +91,9 @@ export default function PincodesPage() {
         setCountries(countryRows);
         setStates(stateRows);
         setDistricts(districtRows);
-    }
+    }, []);
 
-    async function loadPincodes() {
+    const loadPincodes = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -96,7 +112,7 @@ export default function PincodesPage() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [countryFilter, districtFilter, search, stateFilter, statusFilter]);
 
     useEffect(() => {
         async function init() {
@@ -111,7 +127,87 @@ export default function PincodesPage() {
         }
 
         void init();
-    }, []);
+    }, [loadMasters, loadPincodes]);
+
+    useEffect(() => {
+        const nextCountryId = searchParams.get("countryId") ?? "";
+        const nextStateId = searchParams.get("stateId") ?? "";
+        const nextDistrictId = searchParams.get("districtId") ?? "";
+
+        if (nextCountryId !== countryFilter) {
+            setCountryFilter(nextCountryId);
+        }
+
+        if (nextStateId !== stateFilter) {
+            setStateFilter(nextStateId);
+        }
+
+        if (nextDistrictId !== districtFilter) {
+            setDistrictFilter(nextDistrictId);
+        }
+    }, [countryFilter, districtFilter, searchParams, stateFilter]);
+
+    useEffect(() => {
+        if (!districtFilter) {
+            return;
+        }
+
+        const district = districts.find((item) => item.id === districtFilter);
+        if (!district) {
+            return;
+        }
+
+        if (district.stateId !== stateFilter) {
+            setStateFilter(district.stateId);
+        }
+
+        const state = states.find((item) => item.id === district.stateId);
+        if (state && state.countryId !== countryFilter) {
+            setCountryFilter(state.countryId);
+        }
+    }, [countryFilter, districtFilter, districts, stateFilter, states]);
+
+    useEffect(() => {
+        if (!stateFilter) {
+            return;
+        }
+
+        const state = states.find((item) => item.id === stateFilter);
+        if (state && state.countryId !== countryFilter) {
+            setCountryFilter(state.countryId);
+        }
+    }, [countryFilter, stateFilter, states]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (countryFilter) {
+            params.set("countryId", countryFilter);
+        } else {
+            params.delete("countryId");
+        }
+
+        if (stateFilter) {
+            params.set("stateId", stateFilter);
+        } else {
+            params.delete("stateId");
+        }
+
+        if (districtFilter) {
+            params.set("districtId", districtFilter);
+        } else {
+            params.delete("districtId");
+        }
+
+        const nextQuery = params.toString();
+        const currentQuery = searchParams.toString();
+
+        if (nextQuery !== currentQuery) {
+            router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+                scroll: false,
+            });
+        }
+    }, [countryFilter, districtFilter, pathname, router, searchParams, stateFilter]);
 
     useEffect(() => {
         const timer = window.setTimeout(() => {
@@ -119,7 +215,7 @@ export default function PincodesPage() {
         }, 250);
 
         return () => window.clearTimeout(timer);
-    }, [countryFilter, districtFilter, search, stateFilter, statusFilter]);
+    }, [loadPincodes]);
 
     function openCreate() {
         setEditing(null);
@@ -197,6 +293,25 @@ export default function PincodesPage() {
                 actionLabel="New Pincode"
                 onAction={openCreate}
             />
+            {selectedDistrict ? (
+                <HierarchyContext
+                    label="Showing pincodes for"
+                    value={selectedDistrict.name}
+                    helper={
+                        selectedState && selectedCountry
+                            ? `${selectedState.name}, ${selectedCountry.name}`
+                            : selectedState?.name
+                    }
+                    backHref={
+                        selectedState
+                            ? `/admin/master-data/districts?countryId=${selectedCountry?.id || ""}&stateId=${selectedState.id}`
+                            : "/admin/master-data/districts"
+                    }
+                    backLabel="Back to Districts"
+                    clearHref="/admin/master-data/pincodes"
+                    clearLabel="View all pincodes"
+                />
+            ) : null}
 
             {successMessage ? (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
@@ -378,6 +493,34 @@ function ErrorBox({ error, onRetry }: { error: string; onRetry: () => void }) {
                 Retry
             </button>
         </div>
+    );
+}
+
+function HierarchyContext({ label, value, helper, backHref, backLabel, clearHref, clearLabel }: { label: string; value: string; helper?: string; backHref: string; backLabel: string; clearHref: string; clearLabel: string }) {
+    return (
+        <section className="flex flex-col gap-3 rounded-2xl border border-borderSoft bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+            <div>
+                <div className="text-sm text-textSecondary">{label}</div>
+                <div className="mt-1 text-lg font-semibold text-textPrimary">{value}</div>
+                {helper ? (
+                    <div className="mt-1 text-sm text-textSecondary">{helper}</div>
+                ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+                <Link
+                    href={backHref}
+                    className="rounded-2xl border border-borderSoft px-4 py-2 text-sm font-medium text-textPrimary transition hover:bg-cardMuted"
+                >
+                    {backLabel}
+                </Link>
+                <Link
+                    href={clearHref}
+                    className="rounded-2xl border border-borderSoft px-4 py-2 text-sm font-medium text-textSecondary transition hover:bg-cardMuted"
+                >
+                    {clearLabel}
+                </Link>
+            </div>
+        </section>
     );
 }
 

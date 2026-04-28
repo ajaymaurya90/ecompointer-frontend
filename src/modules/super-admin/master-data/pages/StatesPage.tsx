@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
     createState,
     getCountries,
@@ -19,9 +21,14 @@ import type { Country, State } from "@/modules/super-admin/master-data/types/mas
 const emptyForm = { countryId: "", name: "", code: "", isActive: true };
 
 export default function StatesPage() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [items, setItems] = useState<State[]>([]);
     const [countries, setCountries] = useState<Country[]>([]);
-    const [countryFilter, setCountryFilter] = useState("");
+    const [countryFilter, setCountryFilter] = useState(
+        searchParams.get("countryId") ?? "",
+    );
     const [search, setSearch] = useState("");
     const [form, setForm] = useState(emptyForm);
     const [editing, setEditing] = useState<State | null>(null);
@@ -33,6 +40,8 @@ export default function StatesPage() {
         id: item.id,
         label: `${item.name} (${item.code})`,
     }));
+    const selectedCountry =
+        countries.find((item) => item.id === countryFilter) ?? null;
 
     const filtered = useMemo(() => {
         const value = search.trim().toLowerCase();
@@ -67,6 +76,32 @@ export default function StatesPage() {
     useEffect(() => {
         load();
     }, []);
+
+    useEffect(() => {
+        const nextCountryId = searchParams.get("countryId") ?? "";
+        if (nextCountryId !== countryFilter) {
+            setCountryFilter(nextCountryId);
+        }
+    }, [countryFilter, searchParams]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (countryFilter) {
+            params.set("countryId", countryFilter);
+        } else {
+            params.delete("countryId");
+        }
+
+        const nextQuery = params.toString();
+        const currentQuery = searchParams.toString();
+
+        if (nextQuery !== currentQuery) {
+            router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+                scroll: false,
+            });
+        }
+    }, [countryFilter, pathname, router, searchParams]);
 
     function openCreate() {
         setEditing(null);
@@ -119,6 +154,16 @@ export default function StatesPage() {
                 actionLabel="New State"
                 onAction={openCreate}
             />
+            {selectedCountry ? (
+                <HierarchyContext
+                    label="Showing states for"
+                    value={selectedCountry.name}
+                    backHref="/admin/master-data"
+                    backLabel="Back to Master Data"
+                    clearHref="/admin/master-data/states"
+                    clearLabel="View all states"
+                />
+            ) : null}
             <section className="grid grid-cols-1 gap-4 rounded-2xl border border-borderSoft bg-white p-5 shadow-sm md:grid-cols-2">
                 <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search states" className="rounded-2xl border border-borderSoft px-4 py-3 text-sm text-textPrimary outline-none transition focus:border-sidebar" />
                 <select value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)} className="rounded-2xl border border-borderSoft bg-white px-4 py-3 text-sm text-textPrimary outline-none transition focus:border-sidebar">
@@ -141,7 +186,7 @@ export default function StatesPage() {
                             <tbody>
                                 {filtered.map((item) => (
                                     <tr key={item.id} className="border-b border-borderSoft last:border-b-0">
-                                        <td className="px-5 py-4"><div className="font-semibold text-textPrimary">{item.name}</div><div className="mt-1 text-xs text-textSecondary">{item.code || "-"}</div></td>
+                                        <td className="px-5 py-4"><Link href={`/admin/master-data/districts?countryId=${item.countryId}&stateId=${item.id}`} className="font-semibold text-textPrimary transition hover:text-sidebar">{item.name}</Link><div className="mt-1 text-xs text-textSecondary">{item.code || "-"}</div></td>
                                         <td className="px-5 py-4 text-textPrimary">{item.country?.name || "-"}</td>
                                         <td className="px-5 py-4"><StatusBadge isActive={item.isActive} /></td>
                                         <td className="px-5 py-4"><Actions onEdit={() => openEdit(item)} onToggle={() => toggle(item)} isActive={item.isActive} /></td>
@@ -171,3 +216,4 @@ function ErrorBox({ error, onRetry }: { error: string; onRetry: () => void }) { 
 function Actions({ onEdit, onToggle, isActive }: { onEdit: () => void; onToggle: () => void; isActive: boolean }) { return <div className="flex gap-2"><button type="button" onClick={onEdit} className="rounded-2xl border border-borderSoft px-3 py-2 text-xs font-semibold text-textPrimary hover:bg-cardMuted">Edit</button><button type="button" onClick={onToggle} className="rounded-2xl border border-borderSoft px-3 py-2 text-xs font-semibold text-textSecondary hover:bg-cardMuted">{isActive ? "Deactivate" : "Activate"}</button></div>; }
 function ActiveCheckbox({ value, onChange }: { value: boolean; onChange: (value: boolean) => void }) { return <label className="flex items-center gap-3 text-sm font-medium text-textPrimary"><input type="checkbox" checked={value} onChange={(event) => onChange(event.target.checked)} />Active</label>; }
 function SubmitButton({ label }: { label: string }) { return <button type="submit" className="rounded-2xl bg-sidebar px-5 py-3 text-sm font-medium text-white shadow-sm">{label}</button>; }
+function HierarchyContext({ label, value, backHref, backLabel, clearHref, clearLabel }: { label: string; value: string; backHref: string; backLabel: string; clearHref: string; clearLabel: string }) { return <section className="flex flex-col gap-3 rounded-2xl border border-borderSoft bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between"><div><div className="text-sm text-textSecondary">{label}</div><div className="mt-1 text-lg font-semibold text-textPrimary">{value}</div></div><div className="flex flex-wrap gap-2"><Link href={backHref} className="rounded-2xl border border-borderSoft px-4 py-2 text-sm font-medium text-textPrimary transition hover:bg-cardMuted">{backLabel}</Link><Link href={clearHref} className="rounded-2xl border border-borderSoft px-4 py-2 text-sm font-medium text-textSecondary transition hover:bg-cardMuted">{clearLabel}</Link></div></section>; }

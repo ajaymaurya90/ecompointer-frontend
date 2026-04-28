@@ -16,6 +16,22 @@ export async function updateMyProfile(
     return response.data?.data ?? response.data;
 }
 
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await api.post("/auth/forgot-password", { email });
+    return response.data?.data ?? response.data;
+}
+
+export async function resetPassword(
+    token: string,
+    newPassword: string
+): Promise<{ message: string }> {
+    const response = await api.post("/auth/reset-password", {
+        token,
+        newPassword,
+    });
+    return response.data?.data ?? response.data;
+}
+
 export const logoutRequest = async () => {
     const token = localStorage.getItem("accessToken");
 

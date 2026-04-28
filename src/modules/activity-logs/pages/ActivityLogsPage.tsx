@@ -5,6 +5,7 @@ import {
     getMyActivityLog,
     getMyActivityLogs,
 } from "@/modules/activity-logs/api/activityLogsApi";
+import { activityActionKeyOptions } from "@/modules/activity-logs/constants/actionKeys";
 import type {
     BrandOwnerActivityLogItem,
     BrandOwnerActivityLogListResponse,
@@ -134,11 +135,17 @@ export default function ActivityLogsPage() {
                             Action Key
                         </span>
                         <input
+                            list="brand-owner-activity-action-keys"
                             value={actionKey}
                             onChange={(event) => setActionKey(event.target.value)}
                             placeholder="PRODUCT_CREATED"
                             className="mt-2 w-full rounded-2xl border border-borderSoft px-4 py-3 text-sm text-textPrimary outline-none transition focus:border-sidebar"
                         />
+                        <datalist id="brand-owner-activity-action-keys">
+                            {activityActionKeyOptions.map((option) => (
+                                <option key={option} value={option} />
+                            ))}
+                        </datalist>
                     </label>
                     <div className="hidden md:block" />
                     <label className="block">

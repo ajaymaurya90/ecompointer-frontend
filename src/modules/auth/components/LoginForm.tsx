@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,7 +44,7 @@ export default function LoginForm() {
             } else {
                 router.replace("/dashboard");
             }
-        } catch (error) {
+        } catch {
             setServerError("Invalid email or password");
         }
     };
@@ -99,6 +100,15 @@ export default function LoginForm() {
                             {errors.password.message}
                         </p>
                     )}
+                </div>
+
+                <div className="flex justify-end">
+                    <Link
+                        href="/forgot-password"
+                        className="text-sm font-medium text-blue-900 transition hover:text-blue-700"
+                    >
+                        Forgot Password?
+                    </Link>
                 </div>
 
                 {serverError && (

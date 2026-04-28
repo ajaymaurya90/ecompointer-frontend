@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
     createCountry,
@@ -128,7 +129,7 @@ export default function CountriesPage() {
                                 {filtered.map((item) => (
                                     <tr key={item.id} className="border-b border-borderSoft last:border-b-0">
                                         <td className="px-5 py-4">
-                                            <div className="font-semibold text-textPrimary">{item.name}</div>
+                                            <Link href={`/admin/master-data/states?countryId=${item.id}`} className="font-semibold text-textPrimary transition hover:text-sidebar">{item.name}</Link>
                                             <div className="mt-1 text-xs text-textSecondary">{item.code}</div>
                                         </td>
                                         <td className="px-5 py-4 text-textPrimary">{item.phoneCode || "-"}</td>

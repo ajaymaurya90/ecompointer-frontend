@@ -21,6 +21,7 @@ import {
     Map,
     RadioTower,
     Store,
+    CreditCard,
 } from "lucide-react";
 
 const items = [
@@ -55,6 +56,12 @@ const items = [
         icon: RadioTower,
     },
     {
+        href: "/dashboard/settings/payment-gateways",
+        title: "Payment Gateway",
+        description: "Configure gateway modes, credentials, and defaults",
+        icon: CreditCard,
+    },
+    {
         href: "/dashboard/settings/mail-templates",
         title: "Mail Templates",
         description: "Customize transactional email templates",
@@ -86,6 +93,8 @@ export default function SettingsNav() {
                     const isActive =
                         pathname === item.href ||
                         (item.href === "/dashboard/settings/sales-channels" &&
+                            pathname.startsWith(`${item.href}/`)) ||
+                        (item.href === "/dashboard/settings/payment-gateways" &&
                             pathname.startsWith(`${item.href}/`)) ||
                         (item.href === "/dashboard/settings/mail-templates" &&
                             pathname.startsWith(`${item.href}/`));
